@@ -29,7 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/nicomalacho/stack-branch/main/scrip
 **macOS (Homebrew):**
 ```bash
 brew tap nicomalacho/tap
-brew install gs
+brew install gstack
 ```
 
 **Direct Download:**

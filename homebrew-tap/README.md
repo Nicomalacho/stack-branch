@@ -1,30 +1,36 @@
-# Homebrew Tap for gs (gstack)
+# Homebrew Tap for gstack
 
-This is the official Homebrew tap for [gs](https://github.com/nicomalacho/stack-branch), a CLI tool for managing stacked Git branches.
+This is the official Homebrew tap for [gstack](https://github.com/nicomalacho/stack-branch), a CLI tool for managing stacked Git branches.
 
 ## Installation
 
 ```bash
 brew tap nicomalacho/tap
-brew install gs
+brew install gstack
+```
+
+After installation, use the `gs` command:
+
+```bash
+gs --help
 ```
 
 ## Upgrade
 
 ```bash
-brew upgrade gs
+brew upgrade gstack
 ```
 
 ## Uninstall
 
 ```bash
-brew uninstall gs
+brew uninstall gstack
 brew untap nicomalacho/tap
 ```
 
-## What is gs?
+## What is gstack?
 
-`gs` is a CLI tool for managing stacked Git branches with automated rebasing and GitHub PR management. It's inspired by [Graphite](https://graphite.dev/).
+`gstack` (aliased as `gs`) is a CLI tool for managing stacked Git branches with automated rebasing and GitHub PR management. It's inspired by [Graphite](https://graphite.dev/).
 
 Features:
 - Create and manage stacked branches
