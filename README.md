@@ -19,26 +19,44 @@ main
 
 ## Installation
 
+### Quick Install (Recommended)
+
+**macOS/Linux (curl):**
 ```bash
-# Clone the repository
+curl -fsSL https://raw.githubusercontent.com/yourusername/stack-branch/main/scripts/install.sh | bash
+```
+
+**macOS (Homebrew):**
+```bash
+brew tap yourusername/tap
+brew install gs
+```
+
+**Direct Download:**
+Download the latest release for your platform from [GitHub Releases](https://github.com/yourusername/stack-branch/releases/latest):
+- `gs-macos-arm64` - macOS Apple Silicon
+- `gs-macos-x86_64` - macOS Intel
+- `gs-linux-x86_64` - Linux
+- `gs-windows-x86_64.exe` - Windows
+
+```bash
+# Example: macOS Apple Silicon
+curl -L https://github.com/yourusername/stack-branch/releases/latest/download/gs-macos-arm64 -o /usr/local/bin/gs
+chmod +x /usr/local/bin/gs
+```
+
+### From Source (Development)
+
+```bash
 git clone https://github.com/yourusername/stack-branch.git
 cd stack-branch
-
-# Install globally (makes gstack and gs commands available)
-pip install -e .
-
-# Or with uv
-uv pip install -e .
-
-# For development
 pip install -e ".[dev]"
 ```
 
-After installation, you can use either `gstack` or the shorter `gs` alias:
+After installation, use the `gs` command:
 
 ```bash
-gs --help      # Short alias
-gstack --help  # Full command
+gs --help
 ```
 
 **Git pass-through:** Any command not recognized by gstack is automatically passed to git, so you can use `gs` as a drop-in replacement for `git`:

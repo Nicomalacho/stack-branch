@@ -32,6 +32,7 @@ dev = [
     "pytest-mock>=3.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
+    "pyinstaller>=6.0",
 ]
 
 [project.scripts]
