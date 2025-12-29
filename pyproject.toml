@@ -32,7 +32,8 @@ dev = [
     "pytest-mock>=3.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
-    "pyinstaller>=6.0",
+    "nuitka>=2.0",
+    "ordered-set>=4.1.0",
 ]
 
 [project.scripts]
