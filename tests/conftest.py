@@ -171,6 +171,7 @@ def make_commit(message: str = "Test commit", filename: str | None = None) -> st
     if filename is None:
         # Generate unique filename
         import time
+
         filename = f"file_{time.time_ns()}.txt"
 
     Path(filename).write_text(f"Content for {message}\n")

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from gstack import git_ops, stack_manager, workflow_engine
-from gstack.exceptions import DirtyWorkdirError, PendingOperationError, NoPendingOperationError
+from gstack.exceptions import DirtyWorkdirError, NoPendingOperationError, PendingOperationError
 
 
 def make_commit(message: str = "Test commit") -> str:
@@ -469,9 +469,7 @@ class TestSubmitWorkflow:
         mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
         mocker.patch(
             "gstack.gh_ops.create_pr",
-            return_value=PrCreateResult(
-                url="https://github.com/test/repo/pull/42", number=42
-            ),
+            return_value=PrCreateResult(url="https://github.com/test/repo/pull/42", number=42),
         )
 
         workflow_engine.run_submit(temp_git_repo_with_remote)

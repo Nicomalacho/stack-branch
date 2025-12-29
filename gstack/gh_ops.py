@@ -67,9 +67,7 @@ def run_gh(*args: str, check: bool = True) -> GhResult:
 
     if check and result.returncode != 0:
         error_msg = (
-            result.stderr.strip()
-            or result.stdout.strip()
-            or f"gh command failed: {' '.join(cmd)}"
+            result.stderr.strip() or result.stdout.strip() or f"gh command failed: {' '.join(cmd)}"
         )
         raise GhError(error_msg, returncode=result.returncode, stderr=result.stderr)
 
@@ -106,8 +104,11 @@ def get_pr_info(branch: str) -> PrInfo | None:
         PrInfo if PR exists, None otherwise.
     """
     result = run_gh(
-        "pr", "view", branch,
-        "--json", "url,baseRefName,state,number",
+        "pr",
+        "view",
+        branch,
+        "--json",
+        "url,baseRefName,state,number",
         check=False,
     )
 
@@ -147,10 +148,14 @@ def create_pr(
         GhError: If PR creation fails.
     """
     args = [
-        "pr", "create",
-        "--head", head,
-        "--base", base,
-        "--json", "url,number",
+        "pr",
+        "create",
+        "--head",
+        head,
+        "--base",
+        base,
+        "--json",
+        "url,number",
     ]
 
     if title:
@@ -220,8 +225,11 @@ def add_or_update_stack_comment(branch: str, comment_body: str) -> None:
 
     # Get existing comments to find our marker
     result = run_gh(
-        "pr", "view", branch,
-        "--json", "comments",
+        "pr",
+        "view",
+        branch,
+        "--json",
+        "comments",
         check=False,
     )
 
@@ -240,9 +248,12 @@ def add_or_update_stack_comment(branch: str, comment_body: str) -> None:
                         # so we delete and recreate
                         # Actually, we can use the API directly
                         run_gh(
-                            "api", "-X", "PATCH",
+                            "api",
+                            "-X",
+                            "PATCH",
                             f"/repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
-                            "-f", f"body={comment_body}",
+                            "-f",
+                            f"body={comment_body}",
                             check=False,
                         )
                         return

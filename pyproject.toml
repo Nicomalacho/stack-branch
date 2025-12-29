@@ -35,8 +35,8 @@ dev = [
 ]
 
 [project.scripts]
-gstack = "gstack.main:app"
-gs = "gstack.main:app"
+gstack = "gstack.main:main"
+gs = "gstack.main:main"
 
 [build-system]
 requires = ["hatchling"]

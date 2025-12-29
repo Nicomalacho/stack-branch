@@ -103,6 +103,7 @@ class TestDetectTrunk:
     def test_returns_master_as_fallback(self, tmp_path: Path) -> None:
         """Returns 'master' when main doesn't exist but master does."""
         import os
+
         original_cwd = os.getcwd()
         repo_path = tmp_path / "master_repo"
         repo_path.mkdir()
@@ -111,7 +112,9 @@ class TestDetectTrunk:
         try:
             # Initialize with master as default branch
             subprocess.run(["git", "init", "-b", "master"], check=True, capture_output=True)
-            subprocess.run(["git", "config", "user.email", "test@test.com"], check=True, capture_output=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@test.com"], check=True, capture_output=True
+            )
             subprocess.run(["git", "config", "user.name", "Test"], check=True, capture_output=True)
             Path("README.md").write_text("# Test\n")
             subprocess.run(["git", "add", "."], check=True, capture_output=True)
@@ -125,6 +128,7 @@ class TestDetectTrunk:
     def test_raises_when_neither_exists(self, tmp_path: Path) -> None:
         """Raises GitError when neither main nor master exists."""
         import os
+
         original_cwd = os.getcwd()
         repo_path = tmp_path / "custom_repo"
         repo_path.mkdir()
@@ -133,7 +137,9 @@ class TestDetectTrunk:
         try:
             # Initialize with custom branch name
             subprocess.run(["git", "init", "-b", "develop"], check=True, capture_output=True)
-            subprocess.run(["git", "config", "user.email", "test@test.com"], check=True, capture_output=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@test.com"], check=True, capture_output=True
+            )
             subprocess.run(["git", "config", "user.name", "Test"], check=True, capture_output=True)
             Path("README.md").write_text("# Test\n")
             subprocess.run(["git", "add", "."], check=True, capture_output=True)
@@ -191,8 +197,7 @@ class TestIsAncestor:
         """Parent commit is ancestor of child commit."""
         # Get initial commit
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True, capture_output=True, text=True
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         )
         parent_sha = result.stdout.strip()
 
@@ -206,8 +211,7 @@ class TestIsAncestor:
     def test_child_is_not_ancestor_of_parent(self, temp_git_repo: Path) -> None:
         """Child commit is not ancestor of parent commit."""
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            check=True, capture_output=True, text=True
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         )
         parent_sha = result.stdout.strip()
 
@@ -233,7 +237,9 @@ class TestRebase:
         subprocess.run(["git", "commit", "-m", "main commit"], check=True, capture_output=True)
 
         # Create feature branch from initial commit and add commit
-        subprocess.run(["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True
+        )
         Path("feature_file.txt").write_text("feature content")
         subprocess.run(["git", "add", "feature_file.txt"], check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "feature commit"], check=True, capture_output=True)
@@ -280,7 +286,9 @@ class TestIsRebaseInProgress:
         subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "main"], check=True, capture_output=True)
 
-        subprocess.run(["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True
+        )
         Path("conflict.txt").write_text("feature content")
         subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "feature"], check=True, capture_output=True)
@@ -304,7 +312,9 @@ class TestRebaseAbort:
         subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "main"], check=True, capture_output=True)
 
-        subprocess.run(["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "checkout", "-b", "feature", "HEAD~1"], check=True, capture_output=True
+        )
         Path("conflict.txt").write_text("feature content")
         subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "feature"], check=True, capture_output=True)
@@ -350,8 +360,7 @@ class TestPush:
 
         # Verify upstream is set
         result = subprocess.run(
-            ["git", "config", "--get", "branch.feature.remote"],
-            capture_output=True, text=True
+            ["git", "config", "--get", "branch.feature.remote"], capture_output=True, text=True
         )
         assert result.stdout.strip() == "origin"
 
@@ -367,6 +376,7 @@ class TestGetRepoRoot:
     def test_works_from_subdirectory(self, temp_git_repo: Path) -> None:
         """Works when called from a subdirectory."""
         import os
+
         subdir = temp_git_repo / "subdir"
         subdir.mkdir()
         os.chdir(subdir)
@@ -377,6 +387,7 @@ class TestGetRepoRoot:
     def test_raises_outside_repo(self, tmp_path: Path) -> None:
         """Raises NotAGitRepoError outside a git repository."""
         import os
+
         original_cwd = os.getcwd()
         os.chdir(tmp_path)
 

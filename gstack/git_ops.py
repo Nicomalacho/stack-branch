@@ -51,9 +51,7 @@ def run_git(*args: str, check: bool = True, cwd: Path | None = None) -> GitResul
 
     if check and result.returncode != 0:
         error_msg = (
-            result.stderr.strip()
-            or result.stdout.strip()
-            or f"Git command failed: {' '.join(cmd)}"
+            result.stderr.strip() or result.stdout.strip() or f"Git command failed: {' '.join(cmd)}"
         )
         raise GitError(error_msg, returncode=result.returncode, stderr=result.stderr)
 

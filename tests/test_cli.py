@@ -3,7 +3,6 @@
 import subprocess
 from pathlib import Path
 
-import pytest
 from typer.testing import CliRunner
 
 from gstack import stack_manager
@@ -78,6 +77,7 @@ class TestInitCommand:
     def test_fails_outside_git_repo(self, tmp_path: Path) -> None:
         """Fails when run outside a git repository."""
         import os
+
         original_cwd = os.getcwd()
         os.chdir(tmp_path)
 
@@ -168,15 +168,15 @@ class TestCreateCommand:
         assert result.exit_code != 0
         assert "exists" in result.stdout.lower()
 
-    def test_fails_if_workdir_dirty(self, temp_git_repo: Path) -> None:
-        """Fails if working directory has uncommitted changes."""
+    def test_works_with_dirty_workdir(self, temp_git_repo: Path) -> None:
+        """Works even if working directory has uncommitted changes."""
         runner.invoke(app, ["init"])
         (temp_git_repo / "newfile.txt").write_text("uncommitted")
 
         result = runner.invoke(app, ["create", "feature-login"])
 
-        assert result.exit_code != 0
-        assert "clean" in result.stdout.lower() or "uncommitted" in result.stdout.lower()
+        assert result.exit_code == 0
+        assert "feature-login" in result.stdout
 
     def test_parent_option(self, temp_git_repo: Path) -> None:
         """Can specify parent with --parent option."""

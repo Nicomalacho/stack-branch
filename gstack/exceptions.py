@@ -65,9 +65,7 @@ class NotInitializedError(GstackError):
     """gstack has not been initialized in this repository."""
 
     def __init__(self) -> None:
-        super().__init__(
-            "gstack is not initialized. Run 'gstack init' first."
-        )
+        super().__init__("gstack is not initialized. Run 'gstack init' first.")
 
 
 class BranchNotFoundError(GstackError):
@@ -99,6 +97,4 @@ class GhNotAuthenticatedError(GstackError):
     """GitHub CLI is not authenticated."""
 
     def __init__(self) -> None:
-        super().__init__(
-            "GitHub CLI is not authenticated. Run 'gh auth login' first."
-        )
+        super().__init__("GitHub CLI is not authenticated. Run 'gh auth login' first.")

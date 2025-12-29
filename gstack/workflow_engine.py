@@ -166,7 +166,7 @@ def _execute_sync(repo_root: Path, state: SyncState, config=None) -> SyncResult:
                 rebased_branches=rebased_branches,
                 conflict_branch=branch,
                 message=f"Conflict while rebasing '{branch}'. "
-                        f"Resolve conflicts, stage files, then run 'gstack continue'.",
+                f"Resolve conflicts, stage files, then run 'gstack continue'.",
             )
 
         rebased_branches.append(branch)
@@ -362,7 +362,7 @@ def run_submit(repo_root: Path) -> SubmitResult:
                 created_prs.append(branch)
                 # Update config with PR URL
                 config.branches[branch].pr_url = result.url
-            except Exception as e:
+            except Exception:
                 # PR creation failed, but push succeeded - continue
                 pass
         else:
@@ -390,8 +390,8 @@ def run_submit(repo_root: Path) -> SubmitResult:
         created_prs=created_prs,
         updated_prs=updated_prs,
         message=f"Pushed {len(pushed_branches)} branch(es), "
-                f"created {len(created_prs)} PR(s), "
-                f"updated {len(updated_prs)} PR(s).",
+        f"created {len(created_prs)} PR(s), "
+        f"updated {len(updated_prs)} PR(s).",
     )
 
 
@@ -404,10 +404,7 @@ def _post_stack_diagrams(config, branches: list[str], current_branch: str) -> No
         current_branch: Currently checked out branch.
     """
     # Only include branches that are in the submit list
-    relevant_branches = {
-        name: info for name, info in config.branches.items()
-        if name in branches
-    }
+    relevant_branches = {name: info for name, info in config.branches.items() if name in branches}
 
     if not relevant_branches:
         return
@@ -430,10 +427,7 @@ def _post_stack_diagrams(config, branches: list[str], current_branch: str) -> No
 
 def _branch_has_upstream(branch: str) -> bool:
     """Check if a branch has an upstream tracking branch configured."""
-    result = git_ops.run_git(
-        "config", "--get", f"branch.{branch}.remote",
-        check=False
-    )
+    result = git_ops.run_git("config", "--get", f"branch.{branch}.remote", check=False)
     return result.returncode == 0
 
 
@@ -489,7 +483,7 @@ def run_push(repo_root: Path) -> PushResult:
             success=False,
             branch=current_branch,
             message=f"Branch '{current_branch}' is not tracked by gstack. "
-                    f"Use 'gstack create' to create tracked branches.",
+            f"Use 'gstack create' to create tracked branches.",
         )
 
     branch_info = config.branches[current_branch]
@@ -545,7 +539,8 @@ def run_push(repo_root: Path) -> PushResult:
         # Get full stack for the diagram
         stack = config.get_stack(current_branch)
         relevant_branches = {
-            name: info for name, info in config.branches.items()
+            name: info
+            for name, info in config.branches.items()
             if name in stack and name != config.trunk
         }
         if relevant_branches:

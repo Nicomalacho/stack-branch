@@ -25,8 +25,6 @@ app = typer.Typer(
 
 def get_repo_root_or_exit():
     """Get the repository root, or exit with error if not in a git repo."""
-    from pathlib import Path
-
     try:
         return git_ops.get_repo_root()
     except NotAGitRepoError:
@@ -71,16 +69,6 @@ def create(
         stack_manager.require_initialized(repo_root)
     except NotInitializedError:
         typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
-        raise typer.Exit(1)
-
-    # Check for clean workdir
-    try:
-        git_ops.require_clean_workdir()
-    except DirtyWorkdirError:
-        typer.echo(
-            "Error: Working directory is not clean. Commit or stash your changes first.",
-            err=True,
-        )
         raise typer.Exit(1)
 
     # Check if branch already exists
@@ -341,9 +329,7 @@ def log() -> None:
     typer.echo(f"Trunk: {config.trunk}")
 
     # Find root branches (branches whose parent is trunk)
-    root_branches = [
-        name for name, info in config.branches.items() if info.parent == config.trunk
-    ]
+    root_branches = [name for name, info in config.branches.items() if info.parent == config.trunk]
 
     for branch in root_branches:
         print_branch(branch, indent=1)
@@ -376,7 +362,7 @@ def delete(
     current_branch = git_ops.get_current_branch()
     if current_branch == name:
         typer.echo(
-            f"Error: Cannot delete the current branch. Checkout a different branch first.",
+            "Error: Cannot delete the current branch. Checkout a different branch first.",
             err=True,
         )
         raise typer.Exit(1)
@@ -396,5 +382,41 @@ def delete(
             typer.echo(f"Removed '{name}' from gstack (git branch already deleted).")
 
 
+# Known gstack commands
+GSTACK_COMMANDS = {
+    "init",
+    "create",
+    "sync",
+    "continue",
+    "abort",
+    "submit",
+    "push",
+    "log",
+    "delete",
+    "--help",
+    "-h",
+    "--version",
+}
+
+
+def main():
+    """Main entry point with git pass-through for unknown commands."""
+    import subprocess
+    import sys
+
+    # If no args or first arg is a known command, use typer
+    if len(sys.argv) < 2 or sys.argv[1] in GSTACK_COMMANDS:
+        app()
+    else:
+        # Pass through to git
+        git_args = ["git"] + sys.argv[1:]
+        try:
+            result = subprocess.run(git_args)
+            sys.exit(result.returncode)
+        except FileNotFoundError:
+            typer.echo("Error: git not found in PATH.", err=True)
+            sys.exit(1)
+
+
 if __name__ == "__main__":
-    app()
+    main()

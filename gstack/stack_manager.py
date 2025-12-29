@@ -114,9 +114,7 @@ def init_config(
     config_path = get_config_path(repo_root)
 
     if config_path.exists() and not force:
-        raise AlreadyInitializedError(
-            f"gstack is already initialized. Use --force to reinitialize."
-        )
+        raise AlreadyInitializedError("gstack is already initialized. Use --force to reinitialize.")
 
     # Auto-detect trunk if not specified
     if trunk is None:

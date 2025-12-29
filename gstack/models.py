@@ -152,9 +152,6 @@ class StackConfig(BaseModel):
         if not branches:
             return []
 
-        # Build a set for O(1) lookup
-        branch_set = set(branches)
-
         # Calculate depth (distance from trunk) for each branch
         def get_depth(branch: str) -> int:
             if branch == self.trunk or branch not in self.branches:

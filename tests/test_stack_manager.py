@@ -32,9 +32,7 @@ class TestLoadConfig:
         config_path = temp_git_repo / ".gstack_config.json"
         config_data = {
             "trunk": "main",
-            "branches": {
-                "feature": {"parent": "main", "children": [], "pr_url": None}
-            }
+            "branches": {"feature": {"parent": "main", "children": [], "pr_url": None}},
         }
         config_path.write_text(json.dumps(config_data))
 
@@ -161,6 +159,7 @@ class TestRequireInitialized:
     def test_raises_when_not_initialized(self, temp_git_repo: Path) -> None:
         """Raises NotInitializedError when not initialized."""
         from gstack.exceptions import NotInitializedError
+
         with pytest.raises(NotInitializedError):
             stack_manager.require_initialized(temp_git_repo)
 
@@ -189,7 +188,7 @@ class TestLoadState:
             "active_command": "sync",
             "todo_queue": ["feature", "feature-ui"],
             "current_index": 1,
-            "original_head": "feature-ui"
+            "original_head": "feature-ui",
         }
         state_path.write_text(json.dumps(state_data))
 
@@ -205,11 +204,7 @@ class TestSaveState:
 
     def test_creates_state_file(self, temp_git_repo: Path) -> None:
         """Creates state file."""
-        state = SyncState(
-            active_command="sync",
-            todo_queue=["feature"],
-            original_head="feature"
-        )
+        state = SyncState(active_command="sync", todo_queue=["feature"], original_head="feature")
 
         stack_manager.save_state(state, temp_git_repo)
 
@@ -222,7 +217,7 @@ class TestSaveState:
             active_command="sync",
             todo_queue=["feature", "feature-ui"],
             current_index=1,
-            original_head="feature-ui"
+            original_head="feature-ui",
         )
 
         stack_manager.save_state(state, temp_git_repo)
@@ -237,11 +232,7 @@ class TestClearState:
 
     def test_removes_state_file(self, temp_git_repo: Path) -> None:
         """Removes state file."""
-        state = SyncState(
-            active_command="sync",
-            todo_queue=["feature"],
-            original_head="feature"
-        )
+        state = SyncState(active_command="sync", todo_queue=["feature"], original_head="feature")
         stack_manager.save_state(state, temp_git_repo)
 
         stack_manager.clear_state(temp_git_repo)
@@ -263,11 +254,7 @@ class TestHasPendingState:
 
     def test_true_when_state_exists(self, temp_git_repo: Path) -> None:
         """Returns True when state file exists."""
-        state = SyncState(
-            active_command="sync",
-            todo_queue=["feature"],
-            original_head="feature"
-        )
+        state = SyncState(active_command="sync", todo_queue=["feature"], original_head="feature")
         stack_manager.save_state(state, temp_git_repo)
 
         assert stack_manager.has_pending_state(temp_git_repo) is True

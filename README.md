@@ -41,6 +41,16 @@ gs --help      # Short alias
 gstack --help  # Full command
 ```
 
+**Git pass-through:** Any command not recognized by gstack is automatically passed to git, so you can use `gs` as a drop-in replacement for `git`:
+
+```bash
+gs status      # Same as: git status
+gs add .       # Same as: git add .
+gs commit -m "message"  # Same as: git commit -m "message"
+gs diff        # Same as: git diff
+gs log --oneline  # Same as: git log --oneline
+```
+
 ## Quick Start
 
 ```bash
@@ -48,12 +58,12 @@ gstack --help  # Full command
 cd your-repo
 gs init
 
-# Create your first stacked branch
+# Create your first stacked branch (works with uncommitted changes!)
 gs create feature-auth
 
-# Make changes and commit
-git add .
-git commit -m "Add authentication module"
+# Make changes and commit using gs (passes through to git)
+gs add .
+gs commit -m "Add authentication module"
 
 # Push just this branch and create a PR
 gs push
@@ -62,8 +72,8 @@ gs push
 gs create feature-auth-ui
 
 # Make more changes and commit
-git add .
-git commit -m "Add login UI"
+gs add .
+gs commit -m "Add login UI"
 
 # Push just this branch
 gs push
@@ -237,6 +247,37 @@ This helps reviewers understand how the PR fits into the larger feature.
 ### Automatic Merged Branch Detection
 
 Running `gs sync` automatically checks for merged PRs and prompts you to delete the local branches, keeping your stack clean.
+
+### Git Pass-Through
+
+Any unrecognized command is passed directly to git, so you can use `gs` as your primary git interface:
+
+```bash
+gs status           # git status
+gs add .            # git add .
+gs commit -m "msg"  # git commit -m "msg"
+gs diff             # git diff
+gs stash            # git stash
+gs rebase -i HEAD~3 # git rebase -i HEAD~3
+```
+
+This means you only need to type `gs` instead of `git` for all your version control needs.
+
+### Create with Uncommitted Changes
+
+Unlike some stacking tools, `gs create` works even when you have uncommitted changes in your working directory. This enables a natural workflow:
+
+```bash
+# Start working on a feature
+echo "new code" > feature.py
+
+# Decide to put it on a new branch
+gs create my-feature
+
+# Now commit it
+gs add .
+gs commit -m "Add new feature"
+```
 
 ## Commands Reference
 

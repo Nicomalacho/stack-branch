@@ -2,8 +2,6 @@
 
 import json
 import subprocess
-from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -91,12 +89,14 @@ class TestGetPrInfo:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "view"],
             returncode=0,
-            stdout=json.dumps({
-                "url": "https://github.com/org/repo/pull/1",
-                "baseRefName": "main",
-                "state": "OPEN",
-                "number": 1,
-            }),
+            stdout=json.dumps(
+                {
+                    "url": "https://github.com/org/repo/pull/1",
+                    "baseRefName": "main",
+                    "state": "OPEN",
+                    "number": 1,
+                }
+            ),
             stderr="",
         )
 
@@ -131,10 +131,12 @@ class TestCreatePr:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
-            stdout=json.dumps({
-                "url": "https://github.com/org/repo/pull/1",
-                "number": 1,
-            }),
+            stdout=json.dumps(
+                {
+                    "url": "https://github.com/org/repo/pull/1",
+                    "number": 1,
+                }
+            ),
             stderr="",
         )
 
@@ -161,10 +163,12 @@ class TestCreatePr:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
-            stdout=json.dumps({
-                "url": "https://github.com/org/repo/pull/1",
-                "number": 1,
-            }),
+            stdout=json.dumps(
+                {
+                    "url": "https://github.com/org/repo/pull/1",
+                    "number": 1,
+                }
+            ),
             stderr="",
         )
 
@@ -203,12 +207,14 @@ class TestIsPrMerged:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "view"],
             returncode=0,
-            stdout=json.dumps({
-                "url": "https://github.com/org/repo/pull/1",
-                "baseRefName": "main",
-                "state": "MERGED",
-                "number": 1,
-            }),
+            stdout=json.dumps(
+                {
+                    "url": "https://github.com/org/repo/pull/1",
+                    "baseRefName": "main",
+                    "state": "MERGED",
+                    "number": 1,
+                }
+            ),
             stderr="",
         )
 
@@ -220,12 +226,14 @@ class TestIsPrMerged:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "view"],
             returncode=0,
-            stdout=json.dumps({
-                "url": "https://github.com/org/repo/pull/1",
-                "baseRefName": "main",
-                "state": "OPEN",
-                "number": 1,
-            }),
+            stdout=json.dumps(
+                {
+                    "url": "https://github.com/org/repo/pull/1",
+                    "baseRefName": "main",
+                    "state": "OPEN",
+                    "number": 1,
+                }
+            ),
             stderr="",
         )
 
