@@ -3,6 +3,13 @@
   "branches": {
     "first_pr": {
       "parent": "main",
+      "children": [
+        "second_pr"
+      ],
+      "pr_url": null
+    },
+    "second_pr": {
+      "parent": "first_pr",
       "children": [],
       "pr_url": null
     }
