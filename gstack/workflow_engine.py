@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 from gstack import gh_ops, git_ops, stack_manager
 from gstack.exceptions import (
@@ -24,7 +25,7 @@ class SyncResult:
 
     success: bool
     rebased_branches: list[str] = field(default_factory=list)
-    conflict_branch: str | None = None
+    conflict_branch: Optional[str] = None
     message: str = ""
 
 
@@ -439,7 +440,7 @@ class PushResult:
     branch: str
     pr_created: bool = False
     pr_updated: bool = False
-    pr_url: str | None = None
+    pr_url: Optional[str] = None
     message: str = ""
 
 

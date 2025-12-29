@@ -8,6 +8,7 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from gstack.exceptions import DirtyWorkdirError, GitError, NotAGitRepoError
 
@@ -21,7 +22,7 @@ class GitResult:
     returncode: int
 
 
-def run_git(*args: str, check: bool = True, cwd: Path | None = None) -> GitResult:
+def run_git(*args: str, check: bool = True, cwd: Optional[Path] = None) -> GitResult:
     """Run a git command and return the result.
 
     Args:
@@ -152,8 +153,8 @@ def is_ancestor(commit_a: str, commit_b: str) -> bool:
 
 def rebase(
     target: str,
-    onto: str | None = None,
-    upstream: str | None = None,
+    onto: Optional[str] = None,
+    upstream: Optional[str] = None,
     check: bool = True,
 ) -> GitResult:
     """Rebase the current branch.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class BranchInfo(BaseModel):
 
     parent: str
     children: list[str] = Field(default_factory=list)
-    pr_url: str | None = None
+    pr_url: Optional[str] = None
 
 
 class StackConfig(BaseModel):
@@ -181,7 +181,7 @@ class SyncState(BaseModel):
     original_head: str
 
     @property
-    def current_branch(self) -> str | None:
+    def current_branch(self) -> Optional[str]:
         """Get the current branch being processed, or None if done."""
         if self.current_index >= len(self.todo_queue):
             return None

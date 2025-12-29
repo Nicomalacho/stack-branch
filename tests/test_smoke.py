@@ -1,10 +1,13 @@
 """Smoke tests to verify test infrastructure works."""
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 
-def create_branch(name: str, parent: str | None = None) -> None:
+def create_branch(name: str, parent: Optional[str] = None) -> None:
     """Create a new git branch, optionally from a specific parent."""
     if parent:
         subprocess.run(["git", "checkout", parent], check=True, capture_output=True)

@@ -6,7 +6,7 @@ import os
 import subprocess
 from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -156,14 +156,14 @@ def mock_gh(mocker: MockerFixture) -> MagicMock:
 # Helper functions for tests
 
 
-def create_branch(name: str, parent: str | None = None) -> None:
+def create_branch(name: str, parent: Optional[str] = None) -> None:
     """Create a new git branch, optionally from a specific parent."""
     if parent:
         subprocess.run(["git", "checkout", parent], check=True, capture_output=True)
     subprocess.run(["git", "checkout", "-b", name], check=True, capture_output=True)
 
 
-def make_commit(message: str = "Test commit", filename: str | None = None) -> str:
+def make_commit(message: str = "Test commit", filename: Optional[str] = None) -> str:
     """Create a commit with an optional specific filename.
 
     Returns the commit SHA.

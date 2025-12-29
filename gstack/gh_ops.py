@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
+from typing import Optional
 
 from gstack.exceptions import GhError, GhNotAuthenticatedError
 
@@ -94,7 +95,7 @@ def require_gh_auth() -> None:
         raise GhNotAuthenticatedError()
 
 
-def get_pr_info(branch: str) -> PrInfo | None:
+def get_pr_info(branch: str) -> Optional[PrInfo]:
     """Get information about a pull request for a branch.
 
     Args:
@@ -130,8 +131,8 @@ def get_pr_info(branch: str) -> PrInfo | None:
 def create_pr(
     head: str,
     base: str,
-    title: str | None = None,
-    body: str | None = None,
+    title: Optional[str] = None,
+    body: Optional[str] = None,
 ) -> PrCreateResult:
     """Create a new pull request.
 
@@ -267,7 +268,7 @@ def add_or_update_stack_comment(branch: str, comment_body: str) -> None:
 def generate_stack_mermaid(
     branches: dict,
     trunk: str,
-    current_branch: str | None = None,
+    current_branch: Optional[str] = None,
 ) -> str:
     """Generate a mermaid diagram for the stack.
 

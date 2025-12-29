@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Optional
 
 from pydantic import ValidationError
 
@@ -96,7 +97,7 @@ def save_config(config: StackConfig, repo_root: Path) -> None:
 
 def init_config(
     repo_root: Path,
-    trunk: str | None = None,
+    trunk: Optional[str] = None,
     force: bool = False,
 ) -> StackConfig:
     """Initialize gstack in a repository.
@@ -152,7 +153,7 @@ def require_initialized(repo_root: Path) -> None:
         raise NotInitializedError()
 
 
-def load_state(repo_root: Path) -> SyncState | None:
+def load_state(repo_root: Path) -> Optional[SyncState]:
     """Load the sync state from disk.
 
     Args:
