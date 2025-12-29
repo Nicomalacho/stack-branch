@@ -4,12 +4,15 @@ from typing import Optional
 
 import typer
 
-from gstack import git_ops, stack_manager
+from gstack import git_ops, stack_manager, workflow_engine
 from gstack.exceptions import (
     DirtyWorkdirError,
+    GhNotAuthenticatedError,
     GitError,
+    NoPendingOperationError,
     NotAGitRepoError,
     NotInitializedError,
+    PendingOperationError,
 )
 from gstack.stack_manager import AlreadyInitializedError
 
@@ -105,25 +108,200 @@ def create(
 @app.command()
 def sync() -> None:
     """Rebase the current stack onto the latest trunk."""
-    typer.echo("gstack sync - not yet implemented")
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    # Check for merged branches before syncing
+    try:
+        merged_branches = workflow_engine.get_merged_branches(repo_root)
+        if merged_branches:
+            typer.echo("The following branches have been merged:")
+            for branch in merged_branches:
+                typer.echo(f"  - {branch}")
+            typer.echo()
+
+            # Prompt for each merged branch
+            deleted_branches = []
+            for branch in merged_branches:
+                if typer.confirm(f"Delete merged branch '{branch}'?", default=True):
+                    current = git_ops.get_current_branch()
+                    if current == branch:
+                        typer.echo(f"  Skipping '{branch}' (currently checked out)")
+                        continue
+                    stack_manager.unregister_branch(branch, repo_root=repo_root)
+                    try:
+                        git_ops.delete_branch(branch, force=True)
+                        deleted_branches.append(branch)
+                        typer.echo(f"  Deleted '{branch}'")
+                    except GitError:
+                        typer.echo(f"  Removed '{branch}' from tracking (git branch may remain)")
+
+            if deleted_branches:
+                typer.echo()
+    except Exception:
+        # If gh is not available or not authenticated, skip merged branch detection
+        pass
+
+    try:
+        result = workflow_engine.run_sync(repo_root)
+    except DirtyWorkdirError:
+        typer.echo(
+            "Error: Working directory is not clean. Commit or stash your changes first.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    except PendingOperationError:
+        typer.echo(
+            "Error: A sync operation is already in progress. "
+            "Run 'gstack continue' or 'gstack abort'.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if result.success:
+        if result.rebased_branches:
+            typer.echo(f"Synced {len(result.rebased_branches)} branch(es):")
+            for branch in result.rebased_branches:
+                typer.echo(f"  - {branch}")
+        else:
+            typer.echo("Nothing to sync.")
+    else:
+        typer.echo(f"Conflict in branch '{result.conflict_branch}'.", err=True)
+        typer.echo("Resolve the conflicts, stage the files, then run 'gstack continue'.")
+        typer.echo("Or run 'gstack abort' to cancel the sync.")
+        raise typer.Exit(1)
 
 
 @app.command(name="continue")
 def continue_() -> None:
     """Continue a sync after resolving conflicts."""
-    typer.echo("gstack continue - not yet implemented")
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        result = workflow_engine.run_continue(repo_root)
+    except NoPendingOperationError:
+        typer.echo("Error: No pending operation to continue.", err=True)
+        raise typer.Exit(1)
+
+    if result.success:
+        if result.rebased_branches:
+            typer.echo(f"Synced {len(result.rebased_branches)} branch(es):")
+            for branch in result.rebased_branches:
+                typer.echo(f"  - {branch}")
+        typer.echo("Sync complete.")
+    else:
+        typer.echo(f"Conflict in branch '{result.conflict_branch}'.", err=True)
+        typer.echo("Resolve the conflicts, stage the files, then run 'gstack continue'.")
+        raise typer.Exit(1)
 
 
 @app.command()
 def abort() -> None:
     """Abort the current sync operation."""
-    typer.echo("gstack abort - not yet implemented")
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        workflow_engine.run_abort(repo_root)
+        typer.echo("Sync aborted.")
+    except NoPendingOperationError:
+        typer.echo("Error: No pending operation to abort.", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()
 def submit() -> None:
     """Push branches and create/update GitHub PRs."""
-    typer.echo("gstack submit - not yet implemented")
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        result = workflow_engine.run_submit(repo_root)
+    except DirtyWorkdirError:
+        typer.echo(
+            "Error: Working directory is not clean. Commit or stash your changes first.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    except GhNotAuthenticatedError:
+        typer.echo(
+            "Error: Not authenticated with GitHub. Run 'gh auth login' first.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if result.success:
+        if result.pushed_branches:
+            typer.echo(f"Pushed {len(result.pushed_branches)} branch(es):")
+            for branch in result.pushed_branches:
+                typer.echo(f"  - {branch}")
+            if result.created_prs:
+                typer.echo(f"Created {len(result.created_prs)} PR(s):")
+                for branch in result.created_prs:
+                    typer.echo(f"  - {branch}")
+            if result.updated_prs:
+                typer.echo(f"Updated base for {len(result.updated_prs)} PR(s):")
+                for branch in result.updated_prs:
+                    typer.echo(f"  - {branch}")
+        else:
+            typer.echo("Nothing to submit.")
+    else:
+        typer.echo(f"Error: {result.message}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
+def push() -> None:
+    """Push the current branch and create/update its PR."""
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    try:
+        result = workflow_engine.run_push(repo_root)
+    except DirtyWorkdirError:
+        typer.echo(
+            "Error: Working directory is not clean. Commit or stash your changes first.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    except GhNotAuthenticatedError:
+        typer.echo(
+            "Error: Not authenticated with GitHub. Run 'gh auth login' first.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if result.success:
+        typer.echo(result.message)
+    else:
+        typer.echo(f"Error: {result.message}", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()

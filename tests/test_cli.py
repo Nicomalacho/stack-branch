@@ -296,3 +296,49 @@ class TestDeleteCommand:
 
         assert result.exit_code != 0
         assert "current" in result.stdout.lower() or "checkout" in result.stdout.lower()
+
+
+class TestSubmitCommand:
+    """Tests for gstack submit command."""
+
+    def test_fails_if_not_initialized(self, temp_git_repo: Path) -> None:
+        """Fails if gstack not initialized."""
+        result = runner.invoke(app, ["submit"])
+
+        assert result.exit_code != 0
+        assert "not initialized" in result.stdout.lower() or "init" in result.stdout.lower()
+
+    def test_fails_if_workdir_dirty(self, temp_git_repo: Path) -> None:
+        """Fails if working directory has uncommitted changes."""
+        runner.invoke(app, ["init"])
+        (temp_git_repo / "dirty.txt").write_text("uncommitted")
+
+        result = runner.invoke(app, ["submit"])
+
+        assert result.exit_code != 0
+        assert "clean" in result.stdout.lower() or "uncommitted" in result.stdout.lower()
+
+    def test_fails_if_not_authenticated(self, temp_git_repo: Path, mocker) -> None:
+        """Fails if GitHub CLI is not authenticated."""
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["create", "feature"])
+
+        # Mock gh auth to fail
+        mocker.patch("gstack.gh_ops.is_gh_authenticated", return_value=False)
+
+        result = runner.invoke(app, ["submit"])
+
+        assert result.exit_code != 0
+        assert "authenticated" in result.stdout.lower() or "gh auth" in result.stdout.lower()
+
+    def test_noop_when_no_branches(self, temp_git_repo: Path, mocker) -> None:
+        """No-op when no stacked branches exist."""
+        runner.invoke(app, ["init"])
+
+        # Mock gh auth to succeed
+        mocker.patch("gstack.gh_ops.is_gh_authenticated", return_value=True)
+
+        result = runner.invoke(app, ["submit"])
+
+        assert result.exit_code == 0
+        assert "nothing" in result.stdout.lower()
