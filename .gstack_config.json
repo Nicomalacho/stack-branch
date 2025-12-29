@@ -1,4 +1,10 @@
 {
   "trunk": "main",
-  "branches": {}
+  "branches": {
+    "first_pr": {
+      "parent": "main",
+      "children": [],
+      "pr_url": null
+    }
+  }
 }
