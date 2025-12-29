@@ -34,8 +34,7 @@ brew install gs
 
 **Direct Download:**
 Download the latest release for your platform from [GitHub Releases](https://github.com/nicomalacho/stack-branch/releases/latest):
-- `gs-macos-arm64` - macOS Apple Silicon
-- `gs-macos-x86_64` - macOS Intel
+- `gs-macos-arm64` - macOS (Apple Silicon, Intel via Rosetta)
 - `gs-linux-x86_64` - Linux
 - `gs-windows-x86_64.exe` - Windows
 

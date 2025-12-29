@@ -14,16 +14,10 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            arch: arm64
             artifact_name: gs-macos-arm64
-          - os: macos-13
-            arch: x86_64
-            artifact_name: gs-macos-x86_64
           - os: ubuntu-latest
-            arch: x86_64
             artifact_name: gs-linux-x86_64
           - os: windows-latest
-            arch: x86_64
             artifact_name: gs-windows-x86_64.exe
 
     runs-on: ${{ matrix.os }}

@@ -27,7 +27,7 @@ trap "rm -rf $TMP_DIR" EXIT
 # Download and hash each binary
 declare -A SHAS
 
-for artifact in gs-macos-arm64 gs-macos-x86_64 gs-linux-x86_64; do
+for artifact in gs-macos-arm64 gs-linux-x86_64; do
     echo "  Downloading $artifact..."
     curl -fsSL "${BASE_URL}/${artifact}" -o "${TMP_DIR}/${artifact}"
     SHAS[$artifact]=$(shasum -a 256 "${TMP_DIR}/${artifact}" | cut -d' ' -f1)
@@ -43,13 +43,15 @@ FORMULA_FILE="Formula/gs.rb"
 # Update version
 sed -i '' "s/version \".*\"/version \"${FORMULA_VERSION}\"/" "$FORMULA_FILE"
 
-# Update SHA256 values
+# Update SHA256 values (handles both placeholders and existing hashes)
 sed -i '' "s/PLACEHOLDER_SHA256_MACOS_ARM64/${SHAS[gs-macos-arm64]}/" "$FORMULA_FILE"
-sed -i '' "s/PLACEHOLDER_SHA256_MACOS_X86_64/${SHAS[gs-macos-x86_64]}/" "$FORMULA_FILE"
 sed -i '' "s/PLACEHOLDER_SHA256_LINUX_X86_64/${SHAS[gs-linux-x86_64]}/" "$FORMULA_FILE"
 
-# Also update existing SHA256 values (for subsequent releases)
-sed -i '' "s/sha256 \"[a-f0-9]\{64\}\"/sha256 \"${SHAS[gs-macos-arm64]}\"/1" "$FORMULA_FILE"
+# Update existing SHA256 for macos (first occurrence)
+sed -i '' "/on_macos/,/end/{s/sha256 \"[a-f0-9]\{64\}\"/sha256 \"${SHAS[gs-macos-arm64]}\"/;}" "$FORMULA_FILE"
+
+# Update existing SHA256 for linux
+sed -i '' "/on_linux/,/end/{s/sha256 \"[a-f0-9]\{64\}\"/sha256 \"${SHAS[gs-linux-x86_64]}\"/;}" "$FORMULA_FILE"
 
 echo "Done! Formula updated for version ${VERSION}"
 echo ""
