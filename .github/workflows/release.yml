@@ -39,6 +39,8 @@ jobs:
       - name: Build executable (Unix)
         if: runner.os != 'Windows'
         run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
           python -m nuitka \
             --standalone \
             --onefile \
@@ -46,14 +48,15 @@ jobs:
             --output-dir=dist \
             --assume-yes-for-downloads \
             --product-name=gstack \
-            --product-version=${{ github.ref_name }} \
+            --product-version="$VERSION" \
             --onefile-tempdir-spec="{CACHE_DIR}/gstack-{VERSION}" \
             gstack/main.py
 
       - name: Build executable (Windows)
         if: runner.os == 'Windows'
         run: |
-          python -m nuitka --standalone --onefile --output-filename=gs.exe --output-dir=dist --assume-yes-for-downloads --product-name=gstack --product-version=${{ github.ref_name }} --onefile-tempdir-spec="{CACHE_DIR}/gstack-{VERSION}" gstack/main.py
+          $VERSION = "${{ github.ref_name }}" -replace '^v', ''
+          python -m nuitka --standalone --onefile --output-filename=gs.exe --output-dir=dist --assume-yes-for-downloads --product-name=gstack --product-version="$VERSION" --onefile-tempdir-spec="{CACHE_DIR}/gstack-{VERSION}" gstack/main.py
 
       - name: Rename artifact (Unix)
         if: runner.os != 'Windows'
