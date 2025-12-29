@@ -386,13 +386,13 @@ Child branches are automatically reparented to the deleted branch's parent.
 
 ## Configuration
 
-gstack stores its configuration in `.gstack_config.json` in your repository root. This file tracks:
+gstack stores its configuration in `.git/.gstack_config.json`. This file tracks:
 
 - Trunk branch name
 - Tracked branches and their parent relationships
 - PR URLs
 
-The file should be committed to your repository so team members share the same stack configuration.
+Since the config is stored inside the `.git/` directory, it is automatically ignored by git and does not need to be added to `.gitignore`. Note that this means the stack configuration is local to each clone of the repository.
 
 ## License
 

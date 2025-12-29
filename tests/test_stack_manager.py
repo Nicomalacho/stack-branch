@@ -12,10 +12,10 @@ from gstack.models import StackConfig, SyncState
 class TestConfigPath:
     """Tests for config file path."""
 
-    def test_config_file_in_repo_root(self, temp_git_repo: Path) -> None:
-        """Config file should be at .gstack_config.json in repo root."""
+    def test_config_file_in_git_dir(self, temp_git_repo: Path) -> None:
+        """Config file should be at .git/.gstack_config.json."""
         path = stack_manager.get_config_path(temp_git_repo)
-        assert path == temp_git_repo / ".gstack_config.json"
+        assert path == temp_git_repo / ".git" / ".gstack_config.json"
 
 
 class TestLoadConfig:
@@ -29,7 +29,7 @@ class TestLoadConfig:
 
     def test_loads_existing_config(self, temp_git_repo: Path) -> None:
         """Loads config from existing file."""
-        config_path = temp_git_repo / ".gstack_config.json"
+        config_path = temp_git_repo / ".git" / ".gstack_config.json"
         config_data = {
             "trunk": "main",
             "branches": {"feature": {"parent": "main", "children": [], "pr_url": None}},
@@ -43,7 +43,7 @@ class TestLoadConfig:
 
     def test_handles_corrupted_json(self, temp_git_repo: Path) -> None:
         """Raises error for corrupted JSON."""
-        config_path = temp_git_repo / ".gstack_config.json"
+        config_path = temp_git_repo / ".git" / ".gstack_config.json"
         config_path.write_text("{ invalid json }")
 
         with pytest.raises(stack_manager.ConfigError):
@@ -60,7 +60,7 @@ class TestSaveConfig:
 
         stack_manager.save_config(config, temp_git_repo)
 
-        config_path = temp_git_repo / ".gstack_config.json"
+        config_path = temp_git_repo / ".git" / ".gstack_config.json"
         assert config_path.exists()
 
     def test_save_and_load_roundtrip(self, temp_git_repo: Path) -> None:
@@ -98,7 +98,7 @@ class TestInitConfig:
         """Creates a new config file."""
         stack_manager.init_config(temp_git_repo)
 
-        config_path = temp_git_repo / ".gstack_config.json"
+        config_path = temp_git_repo / ".git" / ".gstack_config.json"
         assert config_path.exists()
 
     def test_auto_detects_trunk(self, temp_git_repo: Path) -> None:

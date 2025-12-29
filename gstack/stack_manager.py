@@ -1,7 +1,8 @@
 """Stack manager for gstack configuration and state persistence.
 
-Handles reading/writing the config file (.gstack_config.json) and
-state file (.git/.gstack_state.json).
+Handles reading/writing the config file (.git/.gstack_config.json) and
+state file (.git/.gstack_state.json). Both files are stored inside .git/
+so they are automatically ignored by git.
 """
 
 from __future__ import annotations
@@ -39,9 +40,9 @@ def get_config_path(repo_root: Path) -> Path:
         repo_root: Repository root directory.
 
     Returns:
-        Path to .gstack_config.json.
+        Path to .git/.gstack_config.json.
     """
-    return repo_root / CONFIG_FILENAME
+    return repo_root / ".git" / CONFIG_FILENAME
 
 
 def get_state_path(repo_root: Path) -> Path:

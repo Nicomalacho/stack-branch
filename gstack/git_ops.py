@@ -71,23 +71,14 @@ def get_current_branch() -> str:
     return result.stdout.strip()
 
 
-def is_workdir_clean(ignore_gstack_config: bool = True) -> bool:
+def is_workdir_clean() -> bool:
     """Check if the working directory is clean (no uncommitted changes).
-
-    Args:
-        ignore_gstack_config: If True, ignore .gstack_config.json in the check.
 
     Returns:
         True if clean, False if there are uncommitted changes.
     """
     result = run_git("status", "--porcelain")
-    lines = result.stdout.strip().split("\n") if result.stdout.strip() else []
-
-    if ignore_gstack_config:
-        # Filter out gstack config file
-        lines = [line for line in lines if ".gstack_config.json" not in line]
-
-    return len(lines) == 0
+    return len(result.stdout.strip()) == 0
 
 
 def require_clean_workdir() -> None:

@@ -15,11 +15,11 @@ class TestInitCommand:
     """Tests for gstack init command."""
 
     def test_creates_config_file(self, temp_git_repo: Path) -> None:
-        """gstack init creates .gstack_config.json."""
+        """gstack init creates .git/.gstack_config.json."""
         result = runner.invoke(app, ["init"])
 
         assert result.exit_code == 0
-        assert (temp_git_repo / ".gstack_config.json").exists()
+        assert (temp_git_repo / ".git" / ".gstack_config.json").exists()
 
     def test_auto_detects_trunk(self, temp_git_repo: Path) -> None:
         """Trunk auto-detected from repo."""
