@@ -23,17 +23,17 @@ main
 
 **macOS/Linux (curl):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nicolasgaviria/stack-branch/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nicomalacho/stack-branch/main/scripts/install.sh | bash
 ```
 
 **macOS (Homebrew):**
 ```bash
-brew tap nicolasgaviria/tap
+brew tap nicomalacho/tap
 brew install gs
 ```
 
 **Direct Download:**
-Download the latest release for your platform from [GitHub Releases](https://github.com/nicolasgaviria/stack-branch/releases/latest):
+Download the latest release for your platform from [GitHub Releases](https://github.com/nicomalacho/stack-branch/releases/latest):
 - `gs-macos-arm64` - macOS Apple Silicon
 - `gs-macos-x86_64` - macOS Intel
 - `gs-linux-x86_64` - Linux
@@ -41,14 +41,14 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ```bash
 # Example: macOS Apple Silicon
-curl -L https://github.com/nicolasgaviria/stack-branch/releases/latest/download/gs-macos-arm64 -o /usr/local/bin/gs
+curl -L https://github.com/nicomalacho/stack-branch/releases/latest/download/gs-macos-arm64 -o /usr/local/bin/gs
 chmod +x /usr/local/bin/gs
 ```
 
 ### From Source (Development)
 
 ```bash
-git clone https://github.com/nicolasgaviria/stack-branch.git
+git clone https://github.com/nicomalacho/stack-branch.git
 cd stack-branch
 pip install -e ".[dev]"
 ```

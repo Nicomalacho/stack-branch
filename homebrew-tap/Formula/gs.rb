@@ -1,12 +1,12 @@
 class Gs < Formula
   desc "CLI tool for managing stacked Git branches with automated rebasing"
-  homepage "https://github.com/nicolasgaviria/stack-branch"
+  homepage "https://github.com/nicomalacho/stack-branch"
   version "0.1.0"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/nicolasgaviria/stack-branch/releases/download/v#{version}/gs-macos-arm64"
+      url "https://github.com/nicomalacho/stack-branch/releases/download/v#{version}/gs-macos-arm64"
       sha256 "PLACEHOLDER_SHA256_MACOS_ARM64"
 
       def install
@@ -15,7 +15,7 @@ class Gs < Formula
     end
 
     on_intel do
-      url "https://github.com/nicolasgaviria/stack-branch/releases/download/v#{version}/gs-macos-x86_64"
+      url "https://github.com/nicomalacho/stack-branch/releases/download/v#{version}/gs-macos-x86_64"
       sha256 "PLACEHOLDER_SHA256_MACOS_X86_64"
 
       def install
@@ -26,7 +26,7 @@ class Gs < Formula
 
   on_linux do
     on_intel do
-      url "https://github.com/nicolasgaviria/stack-branch/releases/download/v#{version}/gs-linux-x86_64"
+      url "https://github.com/nicomalacho/stack-branch/releases/download/v#{version}/gs-linux-x86_64"
       sha256 "PLACEHOLDER_SHA256_LINUX_X86_64"
 
       def install

@@ -14,7 +14,7 @@ fi
 # Remove 'v' prefix if present for the formula version
 FORMULA_VERSION="${VERSION#v}"
 
-REPO_OWNER="nicolasgaviria"
+REPO_OWNER="nicomalacho"
 REPO_NAME="stack-branch"
 BASE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${VERSION}"
 

@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-REPO_OWNER="nicolasgaviria"
+REPO_OWNER="nicomalacho"
 REPO_NAME="stack-branch"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 

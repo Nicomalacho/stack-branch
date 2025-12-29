@@ -1,11 +1,11 @@
 # Homebrew Tap for gs (gstack)
 
-This is the official Homebrew tap for [gs](https://github.com/nicolasgaviria/stack-branch), a CLI tool for managing stacked Git branches.
+This is the official Homebrew tap for [gs](https://github.com/nicomalacho/stack-branch), a CLI tool for managing stacked Git branches.
 
 ## Installation
 
 ```bash
-brew tap nicolasgaviria/tap
+brew tap nicomalacho/tap
 brew install gs
 ```
 
@@ -19,7 +19,7 @@ brew upgrade gs
 
 ```bash
 brew uninstall gs
-brew untap nicolasgaviria/tap
+brew untap nicomalacho/tap
 ```
 
 ## What is gs?
