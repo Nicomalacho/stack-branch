@@ -5,6 +5,7 @@ All git commands are executed via subprocess, capturing output for error handlin
 
 from __future__ import annotations
 
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,11 +38,17 @@ def run_git(*args: str, check: bool = True, cwd: Optional[Path] = None) -> GitRe
         GitError: If check=True and command fails.
     """
     cmd = ["git", *args]
+
+    # Set environment to prevent git from opening an editor
+    env = os.environ.copy()
+    env["GIT_EDITOR"] = "true"
+
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
         cwd=cwd,
+        env=env,
     )
 
     git_result = GitResult(
