@@ -4,9 +4,9 @@
 
 set -e
 
-# Configuration - UPDATE THESE VALUES
-REPO_OWNER="yourusername"  # Replace with your GitHub username
-REPO_NAME="stack-branch"   # Replace with your repo name
+# Configuration
+REPO_OWNER="nicolasgaviria"
+REPO_NAME="stack-branch"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 
 # Colors for output

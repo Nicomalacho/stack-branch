@@ -1,0 +1,33 @@
+# Homebrew Tap for gs (gstack)
+
+This is the official Homebrew tap for [gs](https://github.com/nicolasgaviria/stack-branch), a CLI tool for managing stacked Git branches.
+
+## Installation
+
+```bash
+brew tap nicolasgaviria/tap
+brew install gs
+```
+
+## Upgrade
+
+```bash
+brew upgrade gs
+```
+
+## Uninstall
+
+```bash
+brew uninstall gs
+brew untap nicolasgaviria/tap
+```
+
+## What is gs?
+
+`gs` is a CLI tool for managing stacked Git branches with automated rebasing and GitHub PR management. It's inspired by [Graphite](https://graphite.dev/).
+
+Features:
+- Create and manage stacked branches
+- Automatic rebasing when parent branches change
+- GitHub PR creation and management
+- Git pass-through for all standard git commands
