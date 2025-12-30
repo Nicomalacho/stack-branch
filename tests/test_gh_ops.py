@@ -144,6 +144,7 @@ class TestCreatePr:
         )
 
         assert result.url == "https://github.com/org/repo/pull/1"
+        assert result.number == 1
         # Verify the command was called correctly
         call_args = mock_run.call_args[0][0]
         assert "pr" in call_args
@@ -152,6 +153,8 @@ class TestCreatePr:
         assert "feature" in call_args
         assert "--base" in call_args
         assert "main" in call_args
+        # Should NOT have --json flag
+        assert "--json" not in call_args
 
     def test_creates_pr_with_defaults(self, mocker) -> None:
         """Creates PR with default title/body."""
@@ -160,12 +163,17 @@ class TestCreatePr:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
+<<<<<<< HEAD
             stdout="https://github.com/org/repo/pull/1\n",
+=======
+            stdout="https://github.com/org/repo/pull/42\n",
+>>>>>>> 6c6a2f3 (Some fixes)
             stderr="",
         )
 
         result = gh_ops.create_pr(head="feature", base="main")
-        assert result.url is not None
+        assert result.url == "https://github.com/org/repo/pull/42"
+        assert result.number == 42
 
     def test_does_not_use_json_flag(self, mocker) -> None:
         """gh pr create does not support --json flag."""
@@ -340,7 +348,7 @@ class TestGenerateStackMermaid:
 
         diagram = gh_ops.generate_stack_mermaid(branches, "main")
 
-        assert "#42" in diagram
+        assert "##42" in diagram  # PR number in label
         assert "https://github.com/org/repo/pull/42" in diagram
 
     def test_highlights_current_branch(self) -> None:
