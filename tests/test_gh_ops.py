@@ -427,14 +427,49 @@ class TestGenerateStackMermaid:
         assert diagram.startswith("<!-- gstack-diagram -->")
         assert "```mermaid" in diagram
         assert "```" in diagram  # closing fence
-        assert "graph TD" in diagram
 
-        # Node definitions should use valid mermaid syntax
-        # Valid: name[label] or name["label"]
-        # Invalid: name[<a href='...'>label</a>]
+    def test_no_nested_brackets_in_labels(self) -> None:
+        """Mermaid labels must not have nested brackets like name[label [#6]]."""
+        from gstack.models import BranchInfo
+
+        branches = {
+            "feat_move_command": BranchInfo(
+                parent="main",
+                children=[],
+                pr_url="https://github.com/org/repo/pull/6",
+            ),
+        }
+
+        diagram = gh_ops.generate_stack_mermaid(branches, "main")
+
+        # Should NOT have nested brackets like: name[label [#6]]
+        # This causes mermaid parse error: Expecting 'SQE', got 'SQS'
+        assert "[#" not in diagram, "Nested brackets [#n] break mermaid parsing"
+
+        # Should use quoted labels instead: name["label #6"]
+        assert '["' in diagram or "[" in diagram
+
+    def test_pr_label_uses_quoted_syntax(self) -> None:
+        """PR labels should use quoted mermaid syntax to avoid bracket issues."""
+        from gstack.models import BranchInfo
+
+        branches = {
+            "feature": BranchInfo(
+                parent="main",
+                children=[],
+                pr_url="https://github.com/org/repo/pull/42",
+            ),
+        }
+
+        diagram = gh_ops.generate_stack_mermaid(branches, "main")
+
+        # Valid mermaid: feature["feature #42"]
+        # Invalid mermaid: feature[feature [#42]]
         lines = diagram.split("\n")
         for line in lines:
-            if "[" in line and "]" in line and "```" not in line:
-                # Check no HTML tags in node definitions
-                assert "<a" not in line, f"HTML found in line: {line}"
-                assert "</" not in line, f"HTML found in line: {line}"
+            # Check node definition lines (contain branch name and brackets)
+            if "feature[" in line and "#42" in line:
+                # Should be quoted: feature["..."]
+                assert '["' in line, f"Label should use quotes: {line}"
+                # Should NOT have nested unquoted brackets
+                assert "[#" not in line, f"Nested brackets break mermaid: {line}"

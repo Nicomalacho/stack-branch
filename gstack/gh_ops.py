@@ -299,8 +299,11 @@ def generate_stack_mermaid(
         # Node with PR link if available
         if info.pr_url:
             pr_num = info.pr_url.split("/")[-1]
-            label = f"{name} [#{pr_num}]"
-            lines.append(f"    {name}[{label}]")
+            # Use quoted label to avoid mermaid parsing issues with brackets
+            # Valid: name["name #42"]
+            # Invalid: name[name [#42]] - nested brackets break mermaid
+            label = f"{name} #{pr_num}"
+            lines.append(f'    {name}["{label}"]')
             # Use mermaid click directive for clickable links (not HTML <a> tags)
             lines.append(f'    click {name} href "{info.pr_url}" _blank')
         else:
