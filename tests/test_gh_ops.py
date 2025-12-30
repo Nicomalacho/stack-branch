@@ -163,11 +163,7 @@ class TestCreatePr:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
-<<<<<<< HEAD
-            stdout="https://github.com/org/repo/pull/1\n",
-=======
             stdout="https://github.com/org/repo/pull/42\n",
->>>>>>> 6c6a2f3 (Some fixes)
             stderr="",
         )
 
