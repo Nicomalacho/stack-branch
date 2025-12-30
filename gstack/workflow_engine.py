@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+import typer
+
 from gstack import gh_ops, git_ops, stack_manager
 from gstack.exceptions import (
     DirtyWorkdirError,
@@ -156,6 +158,9 @@ def _execute_sync(repo_root: Path, state: SyncState, config=None) -> SyncResult:
         # Checkout the branch
         git_ops.checkout_branch(branch)
 
+        # Squash commits before rebasing to reduce conflicts
+        git_ops.squash_commits(parent)
+
         # Rebase onto parent
         result = git_ops.rebase(parent, check=False)
 
@@ -225,6 +230,16 @@ def run_continue(repo_root: Path) -> SyncResult:
     result = _execute_sync(repo_root, state, config)
     result.rebased_branches = rebased_branches + result.rebased_branches
 
+    # Auto-submit after successful sync
+    if result.success:
+        try:
+            submit_result = run_submit(repo_root)
+            if submit_result.success:
+                result.message = f"{result.message} Auto-submitted changes."
+        except Exception:
+            # Submit failed - don't fail the continue operation
+            pass
+
     return result
 
 
@@ -273,13 +288,14 @@ def run_submit(repo_root: Path) -> SubmitResult:
     Algorithm:
     1. Validate: workdir clean
     2. Check gh authentication
-    3. Get full stack from current branch
-    4. For each branch (bottom-up):
+    3. Sync (rebase) all branches first
+    4. Get full stack from current branch
+    5. For each branch (bottom-up):
        a. Push with force-with-lease (+ -u if first push)
        b. Check if PR exists
        c. Create PR or update base as needed
        d. Store pr_url in config
-    5. Save config
+    6. Save config
 
     Args:
         repo_root: Repository root directory.
@@ -298,6 +314,14 @@ def run_submit(repo_root: Path) -> SubmitResult:
     # Check gh authentication
     if not gh_ops.is_gh_authenticated():
         raise GhNotAuthenticatedError()
+
+    # Sync (rebase) all branches first to ensure they're up to date
+    sync_result = run_sync(repo_root)
+    if not sync_result.success:
+        return SubmitResult(
+            success=False,
+            message=f"Sync failed: {sync_result.message}",
+        )
 
     config = stack_manager.load_config(repo_root)
     current_branch = git_ops.get_current_branch()
@@ -357,14 +381,16 @@ def run_submit(repo_root: Path) -> SubmitResult:
         pr_info = gh_ops.get_pr_info(branch)
 
         if pr_info is None:
-            # Create new PR
+            # Create new PR with a description
             try:
-                result = gh_ops.create_pr(head=branch, base=parent)
+                body = f"Part of stack based on `{parent}`.\n\nCreated with [gstack](https://github.com/nicomalacho/stack-branch)."
+                result = gh_ops.create_pr(head=branch, base=parent, body=body)
                 created_prs.append(branch)
                 # Update config with PR URL
                 config.branches[branch].pr_url = result.url
-            except Exception:
-                # PR creation failed, but push succeeded - continue
+            except Exception as e:
+                # PR creation failed - log but continue with other branches
+                typer.echo(f"  Warning: Failed to create PR for '{branch}': {e}", err=True)
                 pass
         else:
             # PR exists - check if base needs updating
@@ -508,9 +534,10 @@ def run_push(repo_root: Path) -> PushResult:
     pr_url = None
 
     if pr_info is None:
-        # Create new PR
+        # Create new PR with a description
         try:
-            result = gh_ops.create_pr(head=current_branch, base=parent)
+            body = f"Part of stack based on `{parent}`.\n\nCreated with [gstack](https://github.com/nicomalacho/stack-branch)."
+            result = gh_ops.create_pr(head=current_branch, base=parent, body=body)
             pr_created = True
             pr_url = result.url
             config.branches[current_branch].pr_url = result.url
@@ -518,6 +545,7 @@ def run_push(repo_root: Path) -> PushResult:
             return PushResult(
                 success=True,  # Push succeeded
                 branch=current_branch,
+                pr_created=False,
                 message=f"Pushed successfully, but failed to create PR: {e}",
             )
     else:

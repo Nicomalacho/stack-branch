@@ -343,3 +343,75 @@ class TestGenerateStackMermaid:
         diagram = gh_ops.generate_stack_mermaid(branches, "main")
 
         assert gh_ops.STACK_COMMENT_MARKER in diagram
+
+    def test_no_html_in_mermaid_nodes(self) -> None:
+        """Mermaid nodes should not contain raw HTML tags that break parsing."""
+        from gstack.models import BranchInfo
+
+        branches = {
+            "feature": BranchInfo(
+                parent="main",
+                children=[],
+                pr_url="https://github.com/org/repo/pull/42",
+            ),
+        }
+
+        diagram = gh_ops.generate_stack_mermaid(branches, "main")
+
+        # Should NOT contain HTML <a> tags inside node definitions
+        # These break GitHub's mermaid parser
+        assert "<a href=" not in diagram
+        assert "</a>" not in diagram
+
+    def test_uses_click_directive_for_links(self) -> None:
+        """PR links should use mermaid click directive, not HTML."""
+        from gstack.models import BranchInfo
+
+        branches = {
+            "feature": BranchInfo(
+                parent="main",
+                children=[],
+                pr_url="https://github.com/org/repo/pull/42",
+            ),
+        }
+
+        diagram = gh_ops.generate_stack_mermaid(branches, "main")
+
+        # Should use mermaid's click directive for clickable nodes
+        assert "click feature" in diagram
+        assert "https://github.com/org/repo/pull/42" in diagram
+
+    def test_valid_mermaid_syntax(self) -> None:
+        """Generated mermaid should have valid syntax structure."""
+        from gstack.models import BranchInfo
+
+        branches = {
+            "feature": BranchInfo(
+                parent="main",
+                children=["feature-ui"],
+                pr_url="https://github.com/org/repo/pull/1",
+            ),
+            "feature-ui": BranchInfo(
+                parent="feature",
+                children=[],
+                pr_url="https://github.com/org/repo/pull/2",
+            ),
+        }
+
+        diagram = gh_ops.generate_stack_mermaid(branches, "main", current_branch="feature")
+
+        # Basic structure checks
+        assert diagram.startswith("<!-- gstack-diagram -->")
+        assert "```mermaid" in diagram
+        assert "```" in diagram  # closing fence
+        assert "graph TD" in diagram
+
+        # Node definitions should use valid mermaid syntax
+        # Valid: name[label] or name["label"]
+        # Invalid: name[<a href='...'>label</a>]
+        lines = diagram.split("\n")
+        for line in lines:
+            if "[" in line and "]" in line and "```" not in line:
+                # Check no HTML tags in node definitions
+                assert "<a" not in line, f"HTML found in line: {line}"
+                assert "</" not in line, f"HTML found in line: {line}"

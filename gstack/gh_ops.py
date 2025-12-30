@@ -295,7 +295,9 @@ def generate_stack_mermaid(
         if info.pr_url:
             pr_num = info.pr_url.split("/")[-1]
             label = f"{name} [#{pr_num}]"
-            lines.append(f"    {name}[<a href='{info.pr_url}'>{label}</a>]")
+            lines.append(f"    {name}[{label}]")
+            # Use mermaid click directive for clickable links (not HTML <a> tags)
+            lines.append(f'    click {name} href "{info.pr_url}" _blank')
         else:
             lines.append(f"    {name}[{name}]")
 
