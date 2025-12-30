@@ -409,9 +409,7 @@ class TestSquashCommits:
         for i in range(3):
             Path(f"file{i}.txt").write_text(f"content {i}")
             subprocess.run(["git", "add", f"file{i}.txt"], check=True, capture_output=True)
-            subprocess.run(
-                ["git", "commit", "-m", f"commit {i}"], check=True, capture_output=True
-            )
+            subprocess.run(["git", "commit", "-m", f"commit {i}"], check=True, capture_output=True)
 
         # Count commits before squash
         result = subprocess.run(
@@ -502,9 +500,7 @@ class TestSquashCommits:
         # Second commit
         Path("file2.txt").write_text("content 2")
         subprocess.run(["git", "add", "file2.txt"], check=True, capture_output=True)
-        subprocess.run(
-            ["git", "commit", "-m", "fix: minor fix"], check=True, capture_output=True
-        )
+        subprocess.run(["git", "commit", "-m", "fix: minor fix"], check=True, capture_output=True)
 
         git_ops.squash_commits("main")
 
