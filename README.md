@@ -260,9 +260,9 @@ When you run `gs submit` or `gs push`, gstack automatically adds a mermaid diagr
 ```mermaid
 graph TD
     main[main]
-    add-user-model[add-user-model [#1]]
+    add-user-model[add-user-model #1]
     main --> add-user-model
-    add-user-api[add-user-api [#2]]
+    add-user-api[add-user-api #2]
     add-user-model --> add-user-api
 ```
 
