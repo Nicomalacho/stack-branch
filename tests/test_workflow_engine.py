@@ -309,10 +309,6 @@ class TestAutoSubmitAfterContinue:
         # Mock gh_ops for submit
         mocker.patch("gstack.gh_ops.is_gh_authenticated", return_value=True)
         mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
-        mock_create_pr = mocker.patch(
-            "gstack.gh_ops.create_pr",
-            return_value=PrCreateResult(url="https://github.com/test/pr/1", number=1),
-        )
 
         # Track if submit was called
         original_submit = workflow_engine.run_submit
