@@ -401,18 +401,18 @@ GSTACK_COMMANDS = {
 
 def main():
     """Main entry point with git pass-through for unknown commands."""
-    import subprocess
+    import os
     import sys
 
     # If no args or first arg is a known command, use typer
     if len(sys.argv) < 2 or sys.argv[1] in GSTACK_COMMANDS:
         app()
     else:
-        # Pass through to git
+        # Pass through to git using execvp to preserve TTY for interactive commands
+        # This replaces the current process with git, preserving stdin/stdout/stderr
         git_args = ["git"] + sys.argv[1:]
         try:
-            result = subprocess.run(git_args)
-            sys.exit(result.returncode)
+            os.execvp("git", git_args)
         except FileNotFoundError:
             typer.echo("Error: git not found in PATH.", err=True)
             sys.exit(1)

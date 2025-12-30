@@ -302,3 +302,36 @@ def delete_branch(name: str, force: bool = False) -> GitResult:
     """
     flag = "-D" if force else "-d"
     return run_git("branch", flag, name)
+
+
+def squash_commits(parent: str) -> GitResult:
+    """Squash all commits on the current branch since parent into one.
+
+    This is useful before rebasing to reduce the number of potential conflicts.
+    If there's only one commit (or no commits), this is a no-op.
+
+    Args:
+        parent: The parent branch/commit to squash commits since.
+
+    Returns:
+        GitResult from the final operation (or empty result if no-op).
+    """
+    # Get commit count between parent and HEAD
+    result = run_git("rev-list", "--count", f"{parent}..HEAD")
+    count = int(result.stdout.strip())
+
+    if count <= 1:
+        # Nothing to squash
+        return GitResult(stdout="", stderr="", returncode=0)
+
+    # Get the first commit message (the one right after parent)
+    # We use reverse to get commits in chronological order, then take the first
+    msg_result = run_git("log", "--format=%B", "--reverse", f"{parent}..HEAD")
+    messages = msg_result.stdout.strip().split("\n\n")
+    first_message = messages[0].strip() if messages else f"Squashed {count} commits"
+
+    # Soft reset to parent, keeping all changes staged
+    run_git("reset", "--soft", parent)
+
+    # Create single squashed commit with the first commit's message
+    return run_git("commit", "-m", first_message)
