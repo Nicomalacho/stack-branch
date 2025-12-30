@@ -344,7 +344,7 @@ class TestGenerateStackMermaid:
 
         diagram = gh_ops.generate_stack_mermaid(branches, "main")
 
-        assert "##42" in diagram  # PR number in label
+        assert "#42" in diagram  # PR number in label
         assert "https://github.com/org/repo/pull/42" in diagram
 
     def test_highlights_current_branch(self) -> None:
