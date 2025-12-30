@@ -342,3 +342,116 @@ class TestSubmitCommand:
 
         assert result.exit_code == 0
         assert "nothing" in result.stdout.lower()
+
+
+class TestGitPassthrough:
+    """Tests for git command passthrough functionality."""
+
+    def test_passthrough_preserves_m_flag(self, temp_git_repo: Path, mocker) -> None:
+        """Git passthrough preserves -m flag with message argument."""
+        from gstack.main import main
+
+        # Create a file to commit
+        (temp_git_repo / "test.txt").write_text("test content")
+        subprocess.run(["git", "add", "test.txt"], check=True, capture_output=True)
+
+        # Mock sys.argv to simulate `gs commit -m "test message"`
+        mocker.patch("sys.argv", ["gs", "commit", "-m", "test message"])
+
+        # Mock subprocess.run to capture the call (before fix)
+        # or os.execvp to capture the call (after fix)
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0)
+
+        # Also mock os.execvp for after the fix
+        mock_execvp = mocker.patch("os.execvp")
+
+        try:
+            main()
+        except SystemExit:
+            pass
+
+        # Check if either subprocess.run or os.execvp was called with correct args
+        if mock_execvp.called:
+            # After fix: os.execvp("git", ["git", "commit", "-m", "test message"])
+            call_args = mock_execvp.call_args
+            assert call_args[0][0] == "git"
+            assert call_args[0][1] == ["git", "commit", "-m", "test message"]
+        else:
+            # Before fix: subprocess.run(["git", "commit", "-m", "test message"])
+            call_args = mock_run.call_args
+            assert call_args[0][0] == ["git", "commit", "-m", "test message"]
+
+    def test_passthrough_preserves_multiple_flags(self, temp_git_repo: Path, mocker) -> None:
+        """Git passthrough preserves multiple flags like -u -p."""
+        from gstack.main import main
+
+        # Mock sys.argv to simulate `gs add -u -p`
+        mocker.patch("sys.argv", ["gs", "add", "-u", "-p"])
+
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0)
+
+        mock_execvp = mocker.patch("os.execvp")
+
+        try:
+            main()
+        except SystemExit:
+            pass
+
+        if mock_execvp.called:
+            call_args = mock_execvp.call_args
+            assert call_args[0][0] == "git"
+            assert call_args[0][1] == ["git", "add", "-u", "-p"]
+        else:
+            call_args = mock_run.call_args
+            assert call_args[0][0] == ["git", "add", "-u", "-p"]
+
+    def test_passthrough_unknown_command_goes_to_git(self, temp_git_repo: Path, mocker) -> None:
+        """Unknown commands are passed through to git, not handled by gstack."""
+        from gstack.main import main
+
+        mocker.patch("sys.argv", ["gs", "status"])
+
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0)
+
+        mock_execvp = mocker.patch("os.execvp")
+
+        try:
+            main()
+        except SystemExit:
+            pass
+
+        # Either subprocess.run or os.execvp should be called with git status
+        if mock_execvp.called:
+            call_args = mock_execvp.call_args
+            assert call_args[0][0] == "git"
+            assert "status" in call_args[0][1]
+        else:
+            call_args = mock_run.call_args
+            assert call_args[0][0] == ["git", "status"]
+
+    def test_known_commands_not_passed_to_git(self, temp_git_repo: Path, mocker) -> None:
+        """Known gstack commands should not be passed to git."""
+        from gstack.main import main
+
+        # Test that init is handled by gstack, not passed to git
+        mocker.patch("sys.argv", ["gs", "init"])
+
+        mock_run = mocker.patch("subprocess.run")
+
+        # This should call the typer app, not git
+        # We don't need to assert here - just verify git wasn't called
+        try:
+            main()
+        except SystemExit:
+            pass
+
+        # If subprocess.run was called, it should NOT be for "git init"
+        # (it might be called internally by gstack operations)
+        for call in mock_run.call_args_list:
+            args = call[0][0] if call[0] else []
+            if args and args[0] == "git":
+                # Git might be called for internal operations, but not as passthrough
+                assert args != ["git", "init"], "init should not pass through to git"

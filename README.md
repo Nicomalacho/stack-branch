@@ -216,7 +216,14 @@ Resolve conflicts:
 # Fix conflicts in your editor
 git add <resolved-files>
 gs continue
+# Output:
+#   Synced 2 branch(es):
+#     - add-user-model
+#     - add-user-api
+#   Auto-submitted changes.
 ```
+
+Changes are automatically pushed after successful conflict resolution.
 
 Or abort:
 
@@ -265,6 +272,34 @@ This helps reviewers understand how the PR fits into the larger feature.
 
 Running `gs sync` automatically checks for merged PRs and prompts you to delete the local branches, keeping your stack clean.
 
+### Auto-Squash Before Rebase
+
+When running `gs sync`, gstack automatically squashes multiple commits on each branch into a single commit before rebasing. This:
+- Reduces the number of potential merge conflicts
+- Keeps your Git history clean
+- Preserves the first commit message
+
+If a branch only has one commit, it remains unchanged.
+
+### Auto-Submit After Continue
+
+After successfully resolving conflicts with `gs continue`, gstack automatically runs `gs submit` to push your changes. This saves you an extra step in the conflict resolution workflow:
+
+```bash
+# After resolving conflicts
+git add <resolved-files>
+gs continue
+# Output:
+#   Synced 2 branch(es):
+#     - feature
+#     - feature-ui
+#   Auto-submitted changes.
+```
+
+### Sync Before Submit
+
+When you run `gs submit`, gstack automatically syncs (rebases) all branches first to ensure they're up to date with their parents. If there are conflicts, submit will fail and prompt you to resolve them first.
+
 ### Git Pass-Through
 
 Any unrecognized command is passed directly to git, so you can use `gs` as your primary git interface:
@@ -272,13 +307,14 @@ Any unrecognized command is passed directly to git, so you can use `gs` as your 
 ```bash
 gs status           # git status
 gs add .            # git add .
+gs add -p           # git add -p (interactive mode works!)
 gs commit -m "msg"  # git commit -m "msg"
 gs diff             # git diff
 gs stash            # git stash
 gs rebase -i HEAD~3 # git rebase -i HEAD~3
 ```
 
-This means you only need to type `gs` instead of `git` for all your version control needs.
+This means you only need to type `gs` instead of `git` for all your version control needs. Interactive commands like `gs add -p` (patch mode) and `gs rebase -i` work correctly because gstack preserves the terminal for interactive git commands.
 
 ### Create with Uncommitted Changes
 
@@ -340,8 +376,10 @@ Push all branches in the stack and create/update their PRs.
 gs submit
 ```
 
+- **Automatically syncs** (rebases) all branches first
+- Squashes multiple commits per branch into one
 - Pushes all branches in the current stack
-- Creates PRs for branches without one
+- Creates PRs for branches without one (with stack description)
 - Updates PR base branches if they don't match the parent
 - Adds stack diagram comments to all PRs
 
@@ -356,6 +394,7 @@ gs sync
 ```
 
 - Detects merged branches and offers to delete them
+- **Auto-squashes** multiple commits per branch before rebasing
 - Syncs all branches from the current branch's stack (ancestors and descendants)
 - Preserves state on conflict for `gs continue`
 
@@ -367,6 +406,9 @@ Continue a sync operation after resolving conflicts.
 # After resolving conflicts and staging files
 gs continue
 ```
+
+- Continues the rebase from where it stopped
+- **Auto-submits** changes after successful completion
 
 ### `gs abort`
 

@@ -398,6 +398,119 @@ class TestGetRepoRoot:
             os.chdir(original_cwd)
 
 
+class TestSquashCommits:
+    """Tests for squash_commits."""
+
+    def test_squashes_multiple_commits(self, temp_git_repo: Path) -> None:
+        """Squashes multiple commits into one."""
+        # Create feature branch with multiple commits
+        subprocess.run(["git", "checkout", "-b", "feature"], check=True, capture_output=True)
+
+        for i in range(3):
+            Path(f"file{i}.txt").write_text(f"content {i}")
+            subprocess.run(["git", "add", f"file{i}.txt"], check=True, capture_output=True)
+            subprocess.run(["git", "commit", "-m", f"commit {i}"], check=True, capture_output=True)
+
+        # Count commits before squash
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "main..feature"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert int(result.stdout.strip()) == 3
+
+        # Squash
+        git_ops.squash_commits("main")
+
+        # Count commits after squash
+        result = subprocess.run(
+            ["git", "rev-list", "--count", "main..feature"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert int(result.stdout.strip()) == 1
+
+        # Verify all files are still there
+        assert Path("file0.txt").exists()
+        assert Path("file1.txt").exists()
+        assert Path("file2.txt").exists()
+
+    def test_noop_for_single_commit(self, temp_git_repo: Path) -> None:
+        """Does nothing if there's only one commit."""
+        subprocess.run(["git", "checkout", "-b", "feature"], check=True, capture_output=True)
+        Path("file.txt").write_text("content")
+        subprocess.run(["git", "add", "file.txt"], check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "single commit"], check=True, capture_output=True)
+
+        # Get commit SHA before
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        )
+        sha_before = result.stdout.strip()
+
+        # Squash (should be a no-op)
+        git_ops.squash_commits("main")
+
+        # Get commit SHA after
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        )
+        sha_after = result.stdout.strip()
+
+        # SHA should be the same (no change)
+        assert sha_before == sha_after
+
+    def test_noop_for_no_commits(self, temp_git_repo: Path) -> None:
+        """Does nothing if there are no commits since parent."""
+        subprocess.run(["git", "checkout", "-b", "feature"], check=True, capture_output=True)
+
+        # Get commit SHA before
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        )
+        sha_before = result.stdout.strip()
+
+        # Squash (should be a no-op)
+        git_ops.squash_commits("main")
+
+        # Get commit SHA after
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        )
+        sha_after = result.stdout.strip()
+
+        # SHA should be the same (no change)
+        assert sha_before == sha_after
+
+    def test_preserves_first_commit_message(self, temp_git_repo: Path) -> None:
+        """Uses the first commit message for the squashed commit."""
+        subprocess.run(["git", "checkout", "-b", "feature"], check=True, capture_output=True)
+
+        # First commit with meaningful message
+        Path("file1.txt").write_text("content 1")
+        subprocess.run(["git", "add", "file1.txt"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "feat: add important feature"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Second commit
+        Path("file2.txt").write_text("content 2")
+        subprocess.run(["git", "add", "file2.txt"], check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "fix: minor fix"], check=True, capture_output=True)
+
+        git_ops.squash_commits("main")
+
+        # Check commit message
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%s"], check=True, capture_output=True, text=True
+        )
+        assert "feat: add important feature" in result.stdout
+
+
 class TestDeleteBranch:
     """Tests for delete_branch."""
 
