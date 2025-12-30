@@ -267,7 +267,6 @@ class TestAutoSubmitAfterContinue:
         self, temp_git_repo_with_remote: Path, mocker
     ) -> None:
         """Successful continue should trigger submit to push changes."""
-        from gstack.gh_ops import PrCreateResult
 
         stack_manager.init_config(temp_git_repo_with_remote)
 
