@@ -559,16 +559,28 @@ class TestSubmitWorkflow:
 class TestPushWorkflow:
     """Tests for push workflow (single branch)."""
 
-    def test_fails_if_workdir_dirty(self, temp_git_repo: Path) -> None:
-        """Raises DirtyWorkdirError if uncommitted changes."""
-        stack_manager.init_config(temp_git_repo)
+    def test_allows_push_with_dirty_workdir(self, temp_git_repo_with_remote: Path, mocker) -> None:
+        """Push should work even with uncommitted local changes."""
+        from gstack.gh_ops import PrCreateResult
+
+        stack_manager.init_config(temp_git_repo_with_remote)
         git_ops.checkout_branch("feature", create=True)
         make_commit("feature commit")
-        stack_manager.register_branch("feature", "main", temp_git_repo)
-        (temp_git_repo / "dirty.txt").write_text("uncommitted")
+        stack_manager.register_branch("feature", "main", temp_git_repo_with_remote)
 
-        with pytest.raises(DirtyWorkdirError):
-            workflow_engine.run_push(temp_git_repo)
+        # Create uncommitted changes
+        (temp_git_repo_with_remote / "dirty.txt").write_text("uncommitted")
+
+        mocker.patch("gstack.gh_ops.is_gh_authenticated", return_value=True)
+        mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
+        mocker.patch(
+            "gstack.gh_ops.create_pr",
+            return_value=PrCreateResult(url="https://github.com/test/pr/1", number=1),
+        )
+
+        # Should NOT raise DirtyWorkdirError - push allows dirty workdir
+        result = workflow_engine.run_push(temp_git_repo_with_remote)
+        assert result.success is True
 
     def test_fails_if_not_authenticated(self, temp_git_repo: Path, mocker) -> None:
         """Raises GhNotAuthenticatedError if not logged in."""

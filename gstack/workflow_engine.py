@@ -474,7 +474,8 @@ def run_push(repo_root: Path) -> PushResult:
     """Push the current branch and create/update its PR.
 
     This is a lightweight version of submit that only handles the current branch,
-    useful for quick iterations on a single PR.
+    useful for quick iterations on a single PR. Unlike submit, push allows
+    uncommitted local changes since git push only pushes committed changes.
 
     Args:
         repo_root: Repository root directory.
@@ -483,13 +484,8 @@ def run_push(repo_root: Path) -> PushResult:
         PushResult with status.
 
     Raises:
-        DirtyWorkdirError: If working directory has uncommitted changes.
         GhNotAuthenticatedError: If GitHub CLI is not authenticated.
     """
-    # Validate workdir is clean
-    if not git_ops.is_workdir_clean():
-        raise DirtyWorkdirError()
-
     # Check gh authentication
     if not gh_ops.is_gh_authenticated():
         raise GhNotAuthenticatedError()

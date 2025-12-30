@@ -178,7 +178,10 @@ def create_pr(
     except (ValueError, IndexError):
         number = 0
 
-    return PrCreateResult(url=url, number=number)
+    return PrCreateResult(
+        url=url,
+        number=number,
+    )
 
 
 def update_pr_base(branch: str, new_base: str) -> None:
