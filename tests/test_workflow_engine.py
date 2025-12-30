@@ -946,3 +946,253 @@ class TestPrCreationErrorHandling:
         # Result should indicate the failure
         # Either pr_created is False or message contains error info
         assert result.pr_created is False or "fail" in result.message.lower()
+
+
+class TestMoveWorkflow:
+    """Tests for move workflow."""
+
+    def test_reparents_branch_in_config(self, temp_git_repo: Path) -> None:
+        """Updates parent in config."""
+        stack_manager.init_config(temp_git_repo)
+
+        # Create stack: main -> feature -> feature-ui
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo)
+
+        git_ops.checkout_branch("main")
+
+        result = workflow_engine.run_move(temp_git_repo, "feature-ui", "main")
+
+        assert result.success is True
+        config = stack_manager.load_config(temp_git_repo)
+        assert config.branches["feature-ui"].parent == "main"
+
+    def test_updates_children_lists(self, temp_git_repo: Path) -> None:
+        """Updates old and new parent's children lists."""
+        stack_manager.init_config(temp_git_repo)
+
+        # Create stack: main -> feature -> feature-ui
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo)
+
+        git_ops.checkout_branch("main")
+
+        result = workflow_engine.run_move(temp_git_repo, "feature-ui", "main")
+
+        assert result.success is True
+        config = stack_manager.load_config(temp_git_repo)
+        # feature-ui should be removed from feature's children
+        assert "feature-ui" not in config.branches["feature"].children
+        # feature-ui's parent should now be main
+        assert config.branches["feature-ui"].parent == "main"
+
+    def test_rebases_branch_onto_new_parent(self, temp_git_repo: Path) -> None:
+        """Rebases branch onto new parent."""
+        stack_manager.init_config(temp_git_repo)
+
+        # Create stack: main -> feature -> feature-ui
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo)
+
+        # Add commit to main
+        git_ops.checkout_branch("main")
+        main_commit = make_commit("main update after branches")
+
+        result = workflow_engine.run_move(temp_git_repo, "feature-ui", "main")
+
+        assert result.success is True
+        # feature-ui should now be based on main and include main's commit
+        git_ops.checkout_branch("feature-ui")
+        log_result = subprocess.run(
+            ["git", "log", "--oneline", "--format=%H"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        # The new main commit should be in feature-ui's history
+        assert main_commit in log_result.stdout
+
+    def test_updates_pr_base_if_pr_exists(self, temp_git_repo_with_remote: Path, mocker) -> None:
+        """Updates PR base on GitHub if PR exists."""
+        from gstack.gh_ops import PrInfo
+
+        stack_manager.init_config(temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("main")
+
+        # Mock PR info - feature-ui has a PR with base=feature
+        mocker.patch(
+            "gstack.gh_ops.get_pr_info",
+            return_value=PrInfo(
+                url="https://github.com/test/repo/pull/2",
+                base="feature",
+                state="OPEN",
+                number=2,
+            ),
+        )
+        mock_update_base = mocker.patch("gstack.gh_ops.update_pr_base")
+
+        result = workflow_engine.run_move(temp_git_repo_with_remote, "feature-ui", "main")
+
+        assert result.success is True
+        assert result.pr_updated is True
+        mock_update_base.assert_called_once_with("feature-ui", "main")
+
+    def test_skips_pr_update_if_no_pr(self, temp_git_repo_with_remote: Path, mocker) -> None:
+        """Skips PR update if no PR exists."""
+        stack_manager.init_config(temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo_with_remote)
+
+        git_ops.checkout_branch("main")
+
+        mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
+        mock_update_base = mocker.patch("gstack.gh_ops.update_pr_base")
+
+        result = workflow_engine.run_move(temp_git_repo_with_remote, "feature-ui", "main")
+
+        assert result.success is True
+        assert result.pr_updated is False
+        mock_update_base.assert_not_called()
+
+    def test_fails_if_branch_not_tracked(self, temp_git_repo: Path) -> None:
+        """Fails if branch is not tracked by gstack."""
+        stack_manager.init_config(temp_git_repo)
+        git_ops.checkout_branch("untracked", create=True)
+        make_commit("untracked commit")
+        git_ops.checkout_branch("main")
+
+        result = workflow_engine.run_move(temp_git_repo, "untracked", "main")
+
+        assert result.success is False
+        assert "not tracked" in result.message.lower()
+
+    def test_fails_if_new_parent_not_exists(self, temp_git_repo: Path) -> None:
+        """Fails if new parent branch doesn't exist."""
+        stack_manager.init_config(temp_git_repo)
+
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("main")
+
+        result = workflow_engine.run_move(temp_git_repo, "feature", "nonexistent")
+
+        assert result.success is False
+        assert "does not exist" in result.message.lower() or "not exist" in result.message.lower()
+
+    def test_noop_if_same_parent(self, temp_git_repo: Path) -> None:
+        """No-op if branch is already on the specified parent."""
+        stack_manager.init_config(temp_git_repo)
+
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("main")
+
+        result = workflow_engine.run_move(temp_git_repo, "feature", "main")
+
+        assert result.success is True
+        assert "already" in result.message.lower()
+
+    def test_returns_to_original_branch(self, temp_git_repo: Path) -> None:
+        """Returns to original branch after move."""
+        stack_manager.init_config(temp_git_repo)
+
+        git_ops.checkout_branch("feature", create=True)
+        make_commit("feature commit")
+        stack_manager.register_branch("feature", "main", temp_git_repo)
+
+        git_ops.checkout_branch("feature-ui", create=True)
+        make_commit("feature-ui commit")
+        stack_manager.register_branch("feature-ui", "feature", temp_git_repo)
+
+        git_ops.checkout_branch("main")
+        original_branch = git_ops.get_current_branch()
+
+        workflow_engine.run_move(temp_git_repo, "feature-ui", "main")
+
+        assert git_ops.get_current_branch() == original_branch
+
+    def test_handles_rebase_conflict(self, temp_git_repo: Path) -> None:
+        """Handles rebase conflicts gracefully."""
+        stack_manager.init_config(temp_git_repo)
+
+        # Create a file on main
+        conflict_file = temp_git_repo / "conflict.txt"
+        conflict_file.write_text("main content\n")
+        subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "main: add conflict.txt"], check=True, capture_output=True
+        )
+
+        # Create intermediate branch
+        git_ops.checkout_branch("intermediate", create=True)
+        make_commit("intermediate commit")
+        stack_manager.register_branch("intermediate", "main", temp_git_repo)
+
+        # Create feature branch (on top of intermediate) with conflicting change
+        git_ops.checkout_branch("feature", create=True)
+        conflict_file.write_text("feature content\n")
+        subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "feature: modify conflict.txt"],
+            check=True,
+            capture_output=True,
+        )
+        stack_manager.register_branch("feature", "intermediate", temp_git_repo)
+
+        # Update main with conflicting content (this creates a conflict scenario)
+        git_ops.checkout_branch("main")
+        conflict_file.write_text("main updated content\n")
+        subprocess.run(["git", "add", "conflict.txt"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "main: update conflict.txt"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Try to move feature from intermediate onto main (should conflict)
+        result = workflow_engine.run_move(temp_git_repo, "feature", "main")
+
+        # Should fail with conflict
+        assert result.success is False
+        assert "conflict" in result.message.lower() or "continue" in result.message.lower()
+
+        # State should be saved for continue
+        assert stack_manager.has_pending_state(temp_git_repo)
+
+        # Cleanup
+        subprocess.run(["git", "rebase", "--abort"], capture_output=True)
+        stack_manager.clear_state(temp_git_repo)

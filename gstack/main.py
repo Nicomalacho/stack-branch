@@ -336,6 +336,31 @@ def log() -> None:
 
 
 @app.command()
+def move(
+    branch: str = typer.Argument(..., help="Branch to move"),
+    onto: str = typer.Option(..., "--onto", "-o", help="New parent branch"),
+) -> None:
+    """Move a branch to a new parent in the stack."""
+    repo_root = get_repo_root_or_exit()
+
+    try:
+        stack_manager.require_initialized(repo_root)
+    except NotInitializedError:
+        typer.echo("Error: gstack is not initialized. Run 'gstack init' first.", err=True)
+        raise typer.Exit(1)
+
+    result = workflow_engine.run_move(repo_root, branch, onto)
+
+    if result.success:
+        typer.echo(result.message)
+        if result.pr_updated:
+            typer.echo(f"  Updated PR base to '{result.new_parent}'.")
+    else:
+        typer.echo(f"Error: {result.message}", err=True)
+        raise typer.Exit(1)
+
+
+@app.command()
 def delete(
     name: str = typer.Argument(..., help="Name of the branch to delete"),
     force: bool = typer.Option(
@@ -393,6 +418,7 @@ GSTACK_COMMANDS = {
     "push",
     "log",
     "delete",
+    "move",
     "--help",
     "-h",
     "--version",
