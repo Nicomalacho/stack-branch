@@ -434,13 +434,12 @@ class TestGitPassthrough:
 
     def test_known_commands_not_passed_to_git(self, temp_git_repo: Path, mocker) -> None:
         """Known gstack commands should not be passed to git."""
-        from gstack.main import GSTACK_COMMANDS, main
+        from gstack.main import main
 
         # Test that init is handled by gstack, not passed to git
         mocker.patch("sys.argv", ["gs", "init"])
 
         mock_run = mocker.patch("subprocess.run")
-        mock_execvp = mocker.patch("os.execvp")
 
         # This should call the typer app, not git
         # We don't need to assert here - just verify git wasn't called

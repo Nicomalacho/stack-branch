@@ -778,7 +778,6 @@ class TestAutoSquashBeforeRebase:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         )
-        sha_before = result.stdout.strip()
 
         # Sync (should not squash since only 1 commit)
         workflow_engine.run_sync(temp_git_repo)
@@ -850,7 +849,6 @@ class TestSyncBeforeSubmit:
         self, temp_git_repo_with_remote: Path, mocker
     ) -> None:
         """Submit should fail if sync encounters conflicts."""
-        from gstack.models import SyncState
 
         stack_manager.init_config(temp_git_repo_with_remote)
 
