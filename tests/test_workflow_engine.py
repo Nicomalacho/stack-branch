@@ -559,9 +559,7 @@ class TestSubmitWorkflow:
 class TestPushWorkflow:
     """Tests for push workflow (single branch)."""
 
-    def test_allows_push_with_dirty_workdir(
-        self, temp_git_repo_with_remote: Path, mocker
-    ) -> None:
+    def test_allows_push_with_dirty_workdir(self, temp_git_repo_with_remote: Path, mocker) -> None:
         """Push should work even with uncommitted local changes."""
         from gstack.gh_ops import PrCreateResult
 
