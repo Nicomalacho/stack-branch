@@ -128,15 +128,11 @@ class TestCreatePr:
     def test_creates_pr(self, mocker) -> None:
         """Creates PR with correct arguments."""
         mock_run = mocker.patch("subprocess.run")
+        # gh pr create outputs the URL directly, not JSON
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
-            stdout=json.dumps(
-                {
-                    "url": "https://github.com/org/repo/pull/1",
-                    "number": 1,
-                }
-            ),
+            stdout="https://github.com/org/repo/pull/1\n",
             stderr="",
         )
 
@@ -160,20 +156,47 @@ class TestCreatePr:
     def test_creates_pr_with_defaults(self, mocker) -> None:
         """Creates PR with default title/body."""
         mock_run = mocker.patch("subprocess.run")
+        # gh pr create outputs the URL directly, not JSON
         mock_run.return_value = subprocess.CompletedProcess(
             args=["gh", "pr", "create"],
             returncode=0,
-            stdout=json.dumps(
-                {
-                    "url": "https://github.com/org/repo/pull/1",
-                    "number": 1,
-                }
-            ),
+            stdout="https://github.com/org/repo/pull/1\n",
             stderr="",
         )
 
         result = gh_ops.create_pr(head="feature", base="main")
         assert result.url is not None
+
+    def test_does_not_use_json_flag(self, mocker) -> None:
+        """gh pr create does not support --json flag."""
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["gh", "pr", "create"],
+            returncode=0,
+            stdout="https://github.com/org/repo/pull/42\n",
+            stderr="",
+        )
+
+        gh_ops.create_pr(head="feature", base="main")
+
+        # Verify --json is NOT in the command args
+        call_args = mock_run.call_args[0][0]
+        assert "--json" not in call_args, "gh pr create does not support --json flag"
+
+    def test_extracts_pr_number_from_url(self, mocker) -> None:
+        """PR number is extracted from the URL."""
+        mock_run = mocker.patch("subprocess.run")
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["gh", "pr", "create"],
+            returncode=0,
+            stdout="https://github.com/org/repo/pull/42\n",
+            stderr="",
+        )
+
+        result = gh_ops.create_pr(head="feature", base="main")
+
+        assert result.number == 42
+        assert result.url == "https://github.com/org/repo/pull/42"
 
 
 class TestUpdatePrBase:

@@ -148,6 +148,8 @@ def create_pr(
     Raises:
         GhError: If PR creation fails.
     """
+    # Note: gh pr create does NOT support --json flag
+    # It outputs the PR URL directly to stdout
     args = [
         "pr",
         "create",
@@ -155,8 +157,6 @@ def create_pr(
         head,
         "--base",
         base,
-        "--json",
-        "url,number",
     ]
 
     if title:
@@ -169,11 +169,16 @@ def create_pr(
 
     result = run_gh(*args)
 
-    data = json.loads(result.stdout)
-    return PrCreateResult(
-        url=data["url"],
-        number=data["number"],
-    )
+    # Parse URL from stdout (gh pr create outputs URL directly)
+    url = result.stdout.strip()
+
+    # Extract PR number from URL (e.g., https://github.com/org/repo/pull/42)
+    try:
+        number = int(url.split("/")[-1])
+    except (ValueError, IndexError):
+        number = 0
+
+    return PrCreateResult(url=url, number=number)
 
 
 def update_pr_base(branch: str, new_base: str) -> None:
