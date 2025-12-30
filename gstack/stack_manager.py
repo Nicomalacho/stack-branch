@@ -231,3 +231,43 @@ def unregister_branch(name: str, repo_root: Path) -> None:
     config = load_config(repo_root)
     config.remove_branch(name)
     save_config(config, repo_root)
+
+
+def reparent_branch(name: str, new_parent: str, repo_root: Path) -> str:
+    """Change a branch's parent in the stack.
+
+    Args:
+        name: Branch to reparent.
+        new_parent: New parent branch name.
+        repo_root: Repository root directory.
+
+    Returns:
+        The old parent branch name.
+
+    Raises:
+        BranchNotFoundError: If the branch is not tracked.
+    """
+    from gstack.exceptions import BranchNotFoundError
+
+    config = load_config(repo_root)
+
+    if name not in config.branches:
+        raise BranchNotFoundError(name)
+
+    old_parent = config.branches[name].parent
+
+    # Update parent reference
+    config.branches[name].parent = new_parent
+
+    # Remove from old parent's children (if tracked)
+    if old_parent in config.branches:
+        if name in config.branches[old_parent].children:
+            config.branches[old_parent].children.remove(name)
+
+    # Add to new parent's children (if tracked, not trunk)
+    if new_parent in config.branches:
+        if name not in config.branches[new_parent].children:
+            config.branches[new_parent].children.append(name)
+
+    save_config(config, repo_root)
+    return old_parent

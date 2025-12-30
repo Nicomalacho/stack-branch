@@ -455,3 +455,88 @@ class TestGitPassthrough:
             if args and args[0] == "git":
                 # Git might be called for internal operations, but not as passthrough
                 assert args != ["git", "init"], "init should not pass through to git"
+
+
+class TestMoveCommand:
+    """Tests for the move command."""
+
+    def test_move_changes_parent(self, temp_git_repo: Path, mocker) -> None:
+        """Move changes branch parent in config."""
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["create", "feature"])
+        runner.invoke(app, ["create", "feature-ui"])  # feature-ui -> feature
+        subprocess.run(["git", "checkout", "main"], check=True, capture_output=True)
+        runner.invoke(app, ["create", "other"])  # other -> main
+        subprocess.run(["git", "checkout", "feature-ui"], check=True, capture_output=True)
+
+        # Mock gh_ops for PR update
+        mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
+
+        # Move feature-ui from feature to main
+        result = runner.invoke(app, ["move", "feature-ui", "--onto", "main"])
+
+        assert result.exit_code == 0
+        config = stack_manager.load_config(temp_git_repo)
+        assert config.branches["feature-ui"].parent == "main"
+
+    def test_move_updates_children_lists(self, temp_git_repo: Path, mocker) -> None:
+        """Move updates old and new parent's children lists."""
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["create", "feature"])
+        runner.invoke(app, ["create", "feature-ui"])  # feature-ui -> feature
+        subprocess.run(["git", "checkout", "main"], check=True, capture_output=True)
+
+        # Mock gh_ops for PR update
+        mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
+
+        # Move feature-ui from feature to main
+        result = runner.invoke(app, ["move", "feature-ui", "--onto", "main"])
+
+        assert result.exit_code == 0
+        config = stack_manager.load_config(temp_git_repo)
+        # feature-ui should be removed from feature's children
+        assert "feature-ui" not in config.branches["feature"].children
+        # feature-ui's parent should be main
+        assert config.branches["feature-ui"].parent == "main"
+
+    def test_move_fails_if_branch_not_tracked(self, temp_git_repo: Path, mocker) -> None:
+        """Move fails if branch is not tracked by gstack."""
+        runner.invoke(app, ["init"])
+        subprocess.run(["git", "checkout", "-b", "untracked"], check=True, capture_output=True)
+        subprocess.run(["git", "checkout", "main"], check=True, capture_output=True)
+
+        result = runner.invoke(app, ["move", "untracked", "--onto", "main"])
+
+        assert result.exit_code != 0
+        assert "not tracked" in result.stdout.lower()
+
+    def test_move_fails_if_new_parent_not_exists(self, temp_git_repo: Path, mocker) -> None:
+        """Move fails if new parent branch doesn't exist."""
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["create", "feature"])
+        subprocess.run(["git", "checkout", "main"], check=True, capture_output=True)
+
+        result = runner.invoke(app, ["move", "feature", "--onto", "nonexistent"])
+
+        assert result.exit_code != 0
+        assert "not exist" in result.stdout.lower() or "does not exist" in result.stdout.lower()
+
+    def test_move_fails_if_not_initialized(self, temp_git_repo: Path) -> None:
+        """Move fails if gstack not initialized."""
+        result = runner.invoke(app, ["move", "feature", "--onto", "main"])
+
+        assert result.exit_code != 0
+        assert "not initialized" in result.stdout.lower() or "init" in result.stdout.lower()
+
+    def test_move_noop_if_same_parent(self, temp_git_repo: Path, mocker) -> None:
+        """Move is a no-op if branch is already on the specified parent."""
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["create", "feature"])  # feature -> main
+        subprocess.run(["git", "checkout", "main"], check=True, capture_output=True)
+
+        mocker.patch("gstack.gh_ops.get_pr_info", return_value=None)
+
+        result = runner.invoke(app, ["move", "feature", "--onto", "main"])
+
+        assert result.exit_code == 0
+        assert "already" in result.stdout.lower()

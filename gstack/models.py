@@ -164,18 +164,18 @@ class StackConfig(BaseModel):
 
 
 class SyncState(BaseModel):
-    """State for an in-progress sync or submit operation.
+    """State for an in-progress sync, submit, or move operation.
 
     This is persisted to .git/.gstack_state.json to survive interruptions.
 
     Attributes:
-        active_command: The command being executed ("sync" or "submit").
+        active_command: The command being executed ("sync", "submit", or "move").
         todo_queue: Ordered list of branches to process.
         current_index: Index of the current branch being processed.
         original_head: The branch the user was on when starting the operation.
     """
 
-    active_command: Literal["sync", "submit"]
+    active_command: Literal["sync", "submit", "move"]
     todo_queue: list[str]
     current_index: int = 0
     original_head: str

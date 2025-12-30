@@ -597,3 +597,116 @@ def run_push(repo_root: Path) -> PushResult:
         pr_url=pr_url,
         message=message,
     )
+
+
+@dataclass
+class MoveResult:
+    """Result of a move operation."""
+
+    success: bool
+    branch: str
+    old_parent: str
+    new_parent: str
+    pr_updated: bool = False
+    message: str = ""
+
+
+def run_move(repo_root: Path, branch: str, new_parent: str) -> MoveResult:
+    """Move a branch to a new parent.
+
+    Algorithm:
+    1. Validate: branch exists, new_parent exists
+    2. Update config: change parent, fix children lists
+    3. Checkout and rebase onto new parent
+    4. Update PR base on GitHub (if PR exists)
+    5. Return to original branch
+
+    Args:
+        repo_root: Repository root directory.
+        branch: Branch to move.
+        new_parent: New parent branch.
+
+    Returns:
+        MoveResult with status.
+    """
+    config = stack_manager.load_config(repo_root)
+    current_branch = git_ops.get_current_branch()
+
+    # Validation: branch must be tracked
+    if branch not in config.branches:
+        return MoveResult(
+            success=False,
+            branch=branch,
+            old_parent="",
+            new_parent=new_parent,
+            message=f"Branch '{branch}' is not tracked by gstack.",
+        )
+
+    # Validation: new_parent must exist (either as tracked branch or trunk)
+    if new_parent != config.trunk and not git_ops.branch_exists(new_parent):
+        return MoveResult(
+            success=False,
+            branch=branch,
+            old_parent="",
+            new_parent=new_parent,
+            message=f"Branch '{new_parent}' does not exist.",
+        )
+
+    old_parent = config.branches[branch].parent
+
+    # Check if already on the target parent
+    if old_parent == new_parent:
+        return MoveResult(
+            success=True,
+            branch=branch,
+            old_parent=old_parent,
+            new_parent=new_parent,
+            message=f"Branch '{branch}' is already on '{new_parent}'.",
+        )
+
+    # Update config
+    stack_manager.reparent_branch(branch, new_parent, repo_root)
+
+    # Checkout and rebase
+    git_ops.checkout_branch(branch)
+    result = git_ops.rebase(new_parent, check=False)
+
+    if result.returncode != 0:
+        # Conflict - save state for continue
+        state = SyncState(
+            active_command="move",
+            todo_queue=[branch],
+            current_index=0,
+            original_head=current_branch,
+        )
+        stack_manager.save_state(state, repo_root)
+        return MoveResult(
+            success=False,
+            branch=branch,
+            old_parent=old_parent,
+            new_parent=new_parent,
+            message=f"Conflict while rebasing '{branch}'. "
+            f"Resolve conflicts, then run 'gstack continue'.",
+        )
+
+    # Update PR base on GitHub
+    pr_updated = False
+    try:
+        pr_info = gh_ops.get_pr_info(branch)
+        if pr_info and pr_info.base != new_parent:
+            gh_ops.update_pr_base(branch, new_parent)
+            pr_updated = True
+    except Exception:
+        pass  # PR update is not critical
+
+    # Return to original branch
+    git_ops.checkout_branch(current_branch)
+
+    return MoveResult(
+        success=True,
+        branch=branch,
+        old_parent=old_parent,
+        new_parent=new_parent,
+        pr_updated=pr_updated,
+        message=f"Moved '{branch}' from '{old_parent}' to '{new_parent}'.",
+    )
