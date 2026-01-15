@@ -34,8 +34,12 @@ app = typer.Typer(
 @app.callback()
 def main_callback(
     version: bool = typer.Option(
-        False, "--version", "-V", callback=version_callback, is_eager=True,
-        help="Show version and exit."
+        False,
+        "--version",
+        "-V",
+        callback=version_callback,
+        is_eager=True,
+        help="Show version and exit.",
     ),
 ) -> None:
     """gstack - Manage stacked Git branches."""
