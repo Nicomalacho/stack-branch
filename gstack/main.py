@@ -4,7 +4,7 @@ from typing import Optional
 
 import typer
 
-from gstack import git_ops, stack_manager, workflow_engine
+from gstack import __version__, git_ops, stack_manager, workflow_engine
 from gstack.exceptions import (
     DirtyWorkdirError,
     GhNotAuthenticatedError,
@@ -16,11 +16,30 @@ from gstack.exceptions import (
 )
 from gstack.stack_manager import AlreadyInitializedError
 
+
+def version_callback(value: bool) -> None:
+    """Print version and exit."""
+    if value:
+        typer.echo(f"gstack version {__version__}")
+        raise typer.Exit()
+
+
 app = typer.Typer(
     name="gstack",
     help="Manage stacked Git branches with automated rebasing and GitHub PR management.",
     no_args_is_help=True,
 )
+
+
+@app.callback()
+def main_callback(
+    version: bool = typer.Option(
+        False, "--version", "-V", callback=version_callback, is_eager=True,
+        help="Show version and exit."
+    ),
+) -> None:
+    """gstack - Manage stacked Git branches."""
+    pass
 
 
 def get_repo_root_or_exit():
@@ -422,6 +441,7 @@ GSTACK_COMMANDS = {
     "--help",
     "-h",
     "--version",
+    "-V",
 }
 
 
