@@ -25,6 +25,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # Update __init__.py
+          sed -i.bak "s/__version__ = \".*\"/__version__ = \"$VERSION\"/" gstack/__init__.py
+          # Update pyproject.toml
+          sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "Updated version to $VERSION"
+          cat gstack/__init__.py
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -39,8 +52,6 @@ jobs:
       - name: Build executable (Unix)
         if: runner.os != 'Windows'
         run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
           python -m nuitka \
             --standalone \
             --onefile \
@@ -48,15 +59,14 @@ jobs:
             --output-dir=dist \
             --assume-yes-for-downloads \
             --product-name=gstack \
-            --product-version="$VERSION" \
-            --onefile-tempdir-spec="{CACHE_DIR}/gstack-{VERSION}" \
+            --product-version="${{ env.VERSION }}" \
+            --onefile-tempdir-spec="{CACHE_DIR}/gstack-${{ env.VERSION }}" \
             gstack/main.py
 
       - name: Build executable (Windows)
         if: runner.os == 'Windows'
         run: |
-          $VERSION = "${{ github.ref_name }}" -replace '^v', ''
-          python -m nuitka --standalone --onefile --output-filename=gs.exe --output-dir=dist --assume-yes-for-downloads --product-name=gstack --product-version="$VERSION" --onefile-tempdir-spec="{CACHE_DIR}/gstack-{VERSION}" gstack/main.py
+          python -m nuitka --standalone --onefile --output-filename=gs.exe --output-dir=dist --assume-yes-for-downloads --product-name=gstack --product-version="${{ env.VERSION }}" --onefile-tempdir-spec="{CACHE_DIR}/gstack-${{ env.VERSION }}" gstack/main.py
 
       - name: Rename artifact (Unix)
         if: runner.os != 'Windows'
